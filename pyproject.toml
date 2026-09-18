@@ -1,0 +1,22 @@
+[project]
+name = "unrisk-omega-aleph-1"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "pytest>=9.1.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.16.8",
+    "ty>=0.0.82",
+]
+
+[tool.pytest.ini_options]
+# The project is not installed as a package, so put the repo root on the import
+# path. Without this, `uv run pytest` cannot import `processing`.
+pythonpath = ["."]
+testpaths = ["tests"]
