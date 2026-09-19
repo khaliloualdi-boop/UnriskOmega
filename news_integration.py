@@ -20,12 +20,11 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from processing.contracts import BriefingPayload
-from pipeline import build_briefing_payload
-
 # render_news_context already produces the exact, evidence-preserving, JSON-safe
 # shape Sohaib maintains. Reuse it so we inherit any format change he makes.
 from news.service import render_news_context
+from pipeline import build_briefing_payload
+from processing.contracts import BriefingPayload, ClientDossier, Finding
 
 __all__ = [
     "attach_news", "build_payload_with_news", "news_block",
@@ -45,7 +44,10 @@ def news_block(news_result: Any | None) -> dict[str, Any] | None:
         return news_result
     # render_news_context returns a JSON string; parse it back to a dict so the
     # payload holds structured data, not a string blob.
-    return json.loads(render_news_context(news_result))
+    parsed = json.loads(render_news_context(news_result))
+    if not isinstance(parsed, dict):
+        raise TypeError("Rendered news context must be a JSON object.")
+    return parsed
 
 
 def attach_news(payload: BriefingPayload, news_result: Any | None) -> BriefingPayload:
@@ -56,7 +58,10 @@ def attach_news(payload: BriefingPayload, news_result: Any | None) -> BriefingPa
     return payload
 
 
-def preserve_all_findings(payload, full_findings=None):
+def preserve_all_findings(
+    payload: BriefingPayload,
+    full_findings: list[Finding] | None = None,
+) -> BriefingPayload:
     """Guarantee payload.all_findings holds the COMPLETE finding collection.
 
     Why: selected_findings is only what the 60-second briefing shows. A follow-up
@@ -77,7 +82,7 @@ def preserve_all_findings(payload, full_findings=None):
 
 
 def build_payload_with_news(
-    dossier,
+    dossier: ClientDossier,
     news_result: Any | None = None,
     *,
     largest_threshold: float = 0.10,

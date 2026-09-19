@@ -6,6 +6,7 @@ from collections import defaultdict
 from dataclasses import replace
 
 from processing.contracts import ClientDossier, SourceRef
+
 from .models import HoldingLink, NewsQuery, QueryPlan
 
 CRYPTO_NAMES = {"BTC": "Bitcoin", "ETH": "Ethereum"}
@@ -33,12 +34,12 @@ def clean_security_name(name: str) -> str:
     name = re.sub(
         r"^(?:Namen[- ]Aktie|Inhaber[- ]Aktie|Aktien|Aktie|Registered shares?|"
         r"Genussschein|Participation certificate|Anteile|Units)\s+",
-        "", name.strip(), flags=re.I,
+        "", name.strip(), flags=re.IGNORECASE,
     )
     name = re.sub(r"^\s*-[^-]+-\s*", "", name)
     name = re.sub(r"^\d+(?:[.,]\d+)?\s*%\s*", "", name)
     name = re.sub(r"\s+\d{4}-\d{2}\.\d{2}\.\d{2,4}.*$", "", name)
-    name = re.sub(r"\s+(?:AG|SA|Inc\.?|Ltd\.?|PLC|Corp\.?)$", "", name, flags=re.I)
+    name = re.sub(r"\s+(?:AG|SA|Inc\.?|Ltd\.?|PLC|Corp\.?)$", "", name, flags=re.IGNORECASE)
     return " ".join(name.replace('"', "").split())
 
 
@@ -82,7 +83,7 @@ def build_queries(dossier: ClientDossier, *, aliases=None, max_queries=4) -> Que
             continue
         security_type = ref.get("SecurityTypeName", "")
         is_fund = security_type == "Investment fund" or bool(
-            re.match(r"^(Anteile|Units)\b", raw_name or "", flags=re.I)
+            re.match(r"^(Anteile|Units)\b", raw_name or "", flags=re.IGNORECASE)
         )
         is_bond = security_type == "Bonds, debt register claims" or bool(
             re.match(r"^\d+(?:[.,]\d+)?\s*%", raw_name or "")
@@ -93,7 +94,7 @@ def build_queries(dossier: ClientDossier, *, aliases=None, max_queries=4) -> Que
         if rows[0].isin and ref.get("Isin") and rows[0].isin != ref["Isin"]:
             valid_isin = False
             plan.warnings.append(f"SecurityId={sid}: position/reference ISIN mismatch")
-        terms = (name, isin) if valid_isin else (name,)
+        terms: tuple[str, ...] = (name, isin) if valid_isin and isinstance(isin, str) else (name,)
         # Never match a fund using only the asset manager name.
         if is_fund and len(key.split()) < 3:
             plan.skipped.append({"security_id": sid, "reason": "fund_name_not_specific_enough"})

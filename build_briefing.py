@@ -26,6 +26,7 @@ def main(argv=None):
         return parsed
 
     ap.add_argument("--paths", type=positive_int, default=10000, help="Monte Carlo paths")
+    ap.add_argument("--news", type=Path, help="news-module JSON to attach as market_context")
     ap.add_argument("--output", type=Path, help="write JSON here instead of stdout")
     args = ap.parse_args(argv)
 
@@ -36,7 +37,16 @@ def main(argv=None):
     except ValueError:
         pass
 
-    payload = build_briefing(store, profile, n_paths=args.paths)
+    news_result = None
+    if args.news:
+        try:
+            news_result = json.loads(args.news.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            ap.error(f"Could not read --news JSON: {exc}")
+        if not isinstance(news_result, dict):
+            ap.error("--news must contain one JSON object")
+
+    payload = build_briefing(store, profile, n_paths=args.paths, news_result=news_result)
     text = json.dumps(payload, indent=2, ensure_ascii=False, allow_nan=False)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)

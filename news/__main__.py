@@ -1,12 +1,13 @@
 """Real Apify news, or --plan to inspect client-specific queries without a call."""
 import argparse
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from loader import load_store_from_files
 from processing.contracts import to_jsonable
 from processing.dossier import build_dossier
+
 from .apify import ApifyNewsProvider
 from .models import NewsProviderError
 from .queries import build_queries
@@ -29,7 +30,7 @@ def main():
     parser.add_argument("--format", choices=("json", "text"), default="json")
     parser.add_argument("--output", type=Path, help="Write a NEW separate result file; never overwrite an existing file.")
     args = parser.parse_args()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     try:
         if args.output and (args.output.exists() or not args.output.parent.is_dir()):
             raise ValueError("--output needs an existing parent directory and a filename that does not exist.")

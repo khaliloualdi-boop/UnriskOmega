@@ -15,8 +15,9 @@ The engine currently provides:
 - seeded bootstrap and parametric projections; and
 - one strict JSON briefing payload with explicit unavailable states.
 
-Market/news context and final AI narration remain external integrations. The
-payload leaves a clearly marked `market_context` block for that team.
+The news module targets held instruments and can query Apify. Final AI narration
+remains external. The complete payload accepts the news module's JSON as its
+`market_context` block.
 
 ## Run in VS Code
 
@@ -28,7 +29,7 @@ library.
 uv sync --dev
 uv run pytest -q
 uv run ruff check .
-uv run ty check analytics processing build_briefing.py concentration.py reconciliation.py run_analysis.py main.py analytics_playground.py
+uv run ty check .
 ```
 
 Run the original analysis pipeline:
@@ -51,6 +52,20 @@ uv run python build_briefing.py 52253 --paths 10000 --output outputs/briefing.js
 The output directory is created automatically. JSON writing is strict: NaN and
 Infinity are rejected instead of being emitted as non-standard JSON. Use a
 smaller `--paths` value during development for a faster run.
+
+Inspect the client-specific news query plan without making a network call:
+
+```bash
+uv run python -m news CASE-002 --plan --output outputs/news-CASE-002.json
+```
+
+For live news, set `APIFY_TOKEN` and use `--live` with a new output filename.
+Attach an existing news result to the complete analytics payload:
+
+```bash
+uv run python build_briefing.py CASE-002 --news outputs/news-CASE-002.json \
+  --output outputs/briefing-CASE-002.json
+```
 
 ## Programmatic entry points
 

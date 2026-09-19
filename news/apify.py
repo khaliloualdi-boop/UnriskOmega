@@ -4,7 +4,7 @@ import math
 import os
 import re
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import HTTPRedirectHandler, Request, build_opener
@@ -95,7 +95,7 @@ class ApifyNewsProvider:
         )
         if not isinstance(items, list):
             raise NewsProviderError("Apify dataset must be a list.")
-        return NewsBatch(items=items[:limit], retrieved_at=datetime.now(timezone.utc), run_id=run_id)
+        return NewsBatch(items=items[:limit], retrieved_at=datetime.now(UTC), run_id=run_id)
 
     @staticmethod
     def _run(response):

@@ -14,6 +14,7 @@ from __future__ import annotations
 import datetime
 from typing import Any
 
+from news_integration import news_block
 from processing.dossier import DossierError, select_portfolio
 
 from .allocation import analyze_allocation
@@ -120,6 +121,7 @@ def build_briefing(
     seed: int = 42,
     target_value: float | None = None,
     cohort: list[dict[str, Any]] | None = None,
+    news_result: Any | None = None,
 ) -> dict[str, Any]:
     """Build the full briefing payload for one profile."""
     now = datetime.datetime.now(datetime.UTC).isoformat()
@@ -160,6 +162,9 @@ def build_briefing(
         "accounts_by_currency": accts, "lookthrough": look,
         "saa_drift": drift, "guardrails": guard, "peers": peers,
     }
+    market_context = news_block(news_result)
+    if market_context is None:
+        market_context = {"status": "to_be_provided_by_market_data_team"}
 
     return {
         "schema_version": SCHEMA_VERSION,
@@ -203,7 +208,7 @@ def build_briefing(
         "mandate": {"saa_drift": drift, "guardrails": guard},
         "peers": peers,
         "projection": projection,
-        "market_context": {"status": "to_be_provided_by_market_data_team"},
+        "market_context": market_context,
         "data_quality": _data_quality(blocks, projection),
         "disclaimer": "Illustrative; not investment advice.",
     }

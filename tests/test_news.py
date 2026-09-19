@@ -5,20 +5,26 @@ import os
 import subprocess
 import sys
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+from email.message import Message
 from pathlib import Path
 from unittest.mock import patch
 
-from news.apify import ApifyNewsProvider, _HTTP
+from news.apify import _HTTP, ApifyNewsProvider
 from news.models import NewsBatch, NewsProviderError
 from news.queries import build_queries
-from news.service import canonical_url, collect_news, parse_publication, render_news_context
+from news.service import (
+    canonical_url,
+    collect_news,
+    parse_publication,
+    render_news_context,
+)
 from processing.contracts import to_jsonable
 from processing.dossier import build_all, build_dossier
 from processing.loader import load_store
 
 ROOT = Path(__file__).resolve().parents[1]
-NOW = datetime(2026, 9, 19, 12, tzinfo=timezone.utc)
+NOW = datetime(2026, 9, 19, 12, tzinfo=UTC)
 
 
 def dossier(positions=None, *, reference=True):
@@ -280,18 +286,26 @@ class ApifyTests(unittest.TestCase):
         self.assertEqual(len(http.calls), 1)
 
     def test_missing_token_is_actionable(self):
-        with patch.dict(os.environ, {}, clear=True):
-            with self.assertRaisesRegex(NewsProviderError, "APIFY_TOKEN"):
-                ApifyNewsProvider()
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            self.assertRaisesRegex(NewsProviderError, "APIFY_TOKEN"),
+        ):
+            ApifyNewsProvider()
 
     def test_credentials_not_in_url_or_errors(self):
         from urllib.error import HTTPError
         http = _HTTP("secret-token")
-        with patch.object(http._opener, "open", side_effect=HTTPError(
-            "https://secret-token", 401, "secret-token", {}, None,
-        )) as opener:
-            with self.assertRaises(NewsProviderError) as exc:
-                http.request("GET", "actor-runs/r1")
+        with (
+            patch.object(
+                http._opener,
+                "open",
+                side_effect=HTTPError(
+                    "https://secret-token", 401, "secret-token", Message(), None,
+                ),
+            ) as opener,
+            self.assertRaises(NewsProviderError) as exc,
+        ):
+            http.request("GET", "actor-runs/r1")
         self.assertNotIn("secret-token", str(exc.exception))
         request = opener.call_args.args[0]
         self.assertNotIn("secret-token", request.full_url)
@@ -449,7 +463,7 @@ class StrictPersonalizationTests(unittest.TestCase):
         env["PYTHONDONTWRITEBYTECODE"] = "1"
         run = subprocess.run(
             [sys.executable, "-B", "-m", "news", "CASE-016", "--live"],
-            cwd=ROOT, capture_output=True, text=True, env=env,
+            cwd=ROOT, capture_output=True, text=True, env=env, check=False,
         )
         self.assertEqual(run.returncode, 2)
         self.assertIn("APIFY_TOKEN", run.stderr)
@@ -461,6 +475,7 @@ class StrictPersonalizationTests(unittest.TestCase):
                 [sys.executable, "-B", "-m", "news", "CASE-016", *flags],
                 cwd=ROOT, capture_output=True, text=True,
                 env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+                check=False,
             )
             self.assertEqual(run.returncode, 2)
 

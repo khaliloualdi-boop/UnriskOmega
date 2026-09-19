@@ -137,7 +137,10 @@ never `"N/A"`). Fractions are 0–1 unless a `unit` says otherwise.
 ## `market_context` — the block your team fills
 
 Externally sourced, time-sensitive, merged in just before the LLM runs. The
-engine leaves it as `{"status": "to_be_provided_by_market_data_team"}`.
+engine leaves it as `{"status": "to_be_provided_by_market_data_team"}` when no
+news result is supplied. Pass the news module's JSON through
+`build_briefing(..., news_result=result)` or `build_briefing.py --news result.json`
+to populate this block.
 
 **The one thing that makes this useful: tag every item with the same vocabulary
 the engine already uses, so the LLM can join news to *this* portfolio's

@@ -2,10 +2,11 @@
 import json
 import re
 from collections import Counter
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from processing.contracts import ClientDossier, SourceRef, to_jsonable
+
 from .models import ArticleMatch, NewsArticle, NewsProviderError, NewsResult
 from .queries import AMBIGUOUS_NAMES, build_queries, normalize
 
@@ -21,7 +22,7 @@ BUSINESS_TERMS = (
 def _utc(value):
     if not isinstance(value, datetime) or value.tzinfo is None:
         raise ValueError("Expected a timezone-aware datetime.")
-    return value.astimezone(timezone.utc)
+    return value.astimezone(UTC)
 
 
 def _text(value, limit):
@@ -51,7 +52,11 @@ def parse_publication(value, anchor):
     if not isinstance(value, str):
         return None, False
     text = value.strip()
-    relative = re.fullmatch(r"(\d+)\s*(minute|hour|day|week|month|year)s?\s+ago", text, flags=re.I)
+    relative = re.fullmatch(
+        r"(\d+)\s*(minute|hour|day|week|month|year)s?\s+ago",
+        text,
+        flags=re.IGNORECASE,
+    )
     if relative:
         days = {"minute": 1 / 1440, "hour": 1 / 24, "day": 1, "week": 7, "month": 30, "year": 365}
         try:
@@ -61,9 +66,9 @@ def parse_publication(value, anchor):
     if text.lower() in {"just now", "today", "yesterday"}:
         return anchor - timedelta(days=int(text.lower() == "yesterday")), True
     try:
-        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(text)
         estimated = parsed.tzinfo is None or len(text) == 10
-        return parsed.replace(tzinfo=parsed.tzinfo or timezone.utc).astimezone(timezone.utc), estimated
+        return parsed.replace(tzinfo=parsed.tzinfo or UTC).astimezone(UTC), estimated
     except (ValueError, OverflowError):
         return None, False
 
@@ -112,7 +117,7 @@ def collect_news(
     max_articles=3, per_query_limit=10, aliases=None, max_queries=4,
 ) -> NewsResult:
     """Zero results are valid: no broad-market fallback or synthesized article."""
-    now = _utc(as_of or datetime.now(timezone.utc))
+    now = _utc(as_of or datetime.now(UTC))
     for value, lower, upper in ((max_articles, 1, 3), (lookback_days, 1, 30), (per_query_limit, 1, 20)):
         if not isinstance(value, int) or isinstance(value, bool) or not lower <= value <= upper:
             raise ValueError("Use 1–3 articles, 1–30 days and 1–20 candidates per query.")

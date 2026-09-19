@@ -67,6 +67,27 @@ def test_data_quality_present_and_lists_unavailable(store, cohort):
     assert isinstance(dq["unavailable"], list)
 
 
+def test_news_context_is_attached_without_recalculation(store, cohort):
+    news = {
+        "schema_version": "news-2.0",
+        "status": "ok",
+        "articles": [{"title": "Portfolio-specific update"}],
+    }
+    payload = build_briefing(
+        store,
+        "CASE-002",
+        n_paths=50,
+        cohort=cohort,
+        news_result=news,
+    )
+    assert payload["market_context"] is news
+
+
+def test_missing_news_keeps_explicit_placeholder(store, cohort):
+    payload = build_briefing(store, "CASE-002", n_paths=50, cohort=cohort)
+    assert payload["market_context"]["status"] == "to_be_provided_by_market_data_team"
+
+
 def test_generates_and_serialises_for_every_portfolio(store, cohort):
     """No business rule may depend on a particular CASE-xxx id."""
     failures = []
