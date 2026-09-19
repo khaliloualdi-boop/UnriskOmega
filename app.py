@@ -10,6 +10,7 @@ import charts
 from presentation import narrative_markdown, news_status_message
 from processing.dossier import is_consolidated
 from workflow import case_files, load_case, run_workflow
+from ai_engine import BriefingGenerationError, answer_chat_question
 
 ROOT = Path(__file__).resolve().parent
 
@@ -146,7 +147,9 @@ with st.container(border=True):
     else:
         st.info("The narrative is unavailable. You can still explore the analysis below.")
 
-tab_now, tab_dev, tab_news = st.tabs(["Portfolio health", "Performance & outlook", "News & perspective"])
+tab_now, tab_dev, tab_news, tab_chat = st.tabs(
+    ["Portfolio health", "Performance & outlook", "News & perspective", "Advisor Chat"]
+)
 with tab_now:
     left, right = st.columns([1, 1.2], gap="large")
     alloc = payload.get("allocation", {})
@@ -224,6 +227,29 @@ with tab_news:
         st.subheader("For your next conversation")
         st.markdown(narrative_markdown(result["texts"].get("news")
                                       or news_status_message(mc)))
+
+# ============================ Advisor Chat ============================
+with tab_chat:
+    st.caption("Ask specific questions about holdings, performance or notes for this client.")
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+    if user_query := st.chat_input("Ask a question about this portfolio..."):
+        st.session_state.messages.append({"role": "user", "content": user_query})
+        with st.chat_message("user"):
+            st.markdown(user_query)
+        with st.chat_message("assistant"):
+            with st.spinner("Searching the analysis..."):
+                try:
+                    bot_response = answer_chat_question(payload, user_query)
+                    st.markdown(bot_response)
+                except BriefingGenerationError as exc:
+                    bot_response = f"Error: {exc}"
+                    st.error(bot_response)
+        st.session_state.messages.append({"role": "assistant", "content": bot_response})
+
 
 with st.expander("Sources and data limitations"):
     for warning in payload.get("market_context", {}).get("warnings", []):
