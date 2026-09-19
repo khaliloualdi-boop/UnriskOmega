@@ -564,12 +564,21 @@ class BriefingPayload:
     portfolio_id: int
     client_context: dict[str, Any]
     selected_findings: list[Finding] = field(default_factory=list)
+    # The COMPLETE scored finding collection, for evidence lookup and a future
+    # follow-up chatbot. selected_findings is the subset shown in the 60-second
+    # briefing; all_findings keeps everything so nothing narrowing removes is
+    # lost. Defaults to empty; preserve_all_findings() populates it.
+    all_findings: list[Finding] = field(default_factory=list)
     action_candidates: list[ActionCandidate] = field(default_factory=list)
     data_gaps: list[DataGap] = field(default_factory=list)
     critical_overflow_count: int = 0
     analysis_date: date | None = None
     schema_version: str = SCHEMA_VERSION
     is_fixture: bool = False      # True => example data, not a real analysis
+    # Optional section-3 external context (news matched to this portfolio's
+    # holdings). None means news was not attached; the core runs identically
+    # without it. Populated by news_integration.attach_news().
+    news: dict[str, Any] | None = None
 
 
 # --------------------------------------------------------------------------
