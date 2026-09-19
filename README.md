@@ -22,8 +22,8 @@ remains external. The complete payload accepts the news module's JSON as its
 ## Run in VS Code
 
 Open this folder in VS Code and select its Python environment. The project needs
-Python 3.11 or newer and has no runtime dependencies outside the standard
-library.
+Python 3.11 or newer. `uv sync --dev` installs the analytics development tools,
+the Streamlit interface, and the OpenAI SDK.
 
 ```bash
 uv sync --dev
@@ -66,6 +66,19 @@ Attach an existing news result to the complete analytics payload:
 uv run python build_briefing.py CASE-002 --news outputs/news-CASE-002.json \
   --output outputs/briefing-CASE-002.json
 ```
+
+Run the advisor web app after setting an OpenAI API key in the same terminal:
+
+```bash
+export OPENAI_API_KEY="your-key"
+uv run streamlit run app.py
+```
+
+The app lets the advisor choose a client and portfolio, optionally upload the
+matching JSON produced by the news module, inspect the complete factual payload,
+and generate a 130–160 word briefing. The news file is rejected if its client or
+portfolio identifier conflicts with the current selection. `OPENAI_MODEL` can
+override the default `gpt-5-mini` model.
 
 ## Programmatic entry points
 

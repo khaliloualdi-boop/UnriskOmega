@@ -1,0 +1,287 @@
+{
+  "client_ref": "CASE-001",
+  "portfolio_id": 12291,
+  "as_of": "2026-09-19T09:43:51.578728+00:00",
+  "provider": "apify/scrapeai/yahoo-news-scraper",
+  "is_fixture": false,
+  "status": "ok",
+  "queries": [
+    {
+      "text": "\"Bitcoin\"",
+      "kind": "crypto",
+      "match_terms": [
+        "Bitcoin"
+      ],
+      "holdings": [
+        {
+          "security_id": null,
+          "instrument_name": "Bitcoin",
+          "position_value": 6834.46,
+          "position_currency": "CHF",
+          "relation": "crypto",
+          "source_paths": [
+            "clients[CASE-001].Portfolios[0].AccountPositions[3]"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-001",
+          "portfolio_id": 12291,
+          "security_id": null,
+          "account_name": "Kryptowaehrungskonto Bitcoin",
+          "field": "Currency",
+          "value": "BTC",
+          "path": "clients[CASE-001].Portfolios[0].AccountPositions[3].Currency"
+        },
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-001",
+          "portfolio_id": 12291,
+          "security_id": null,
+          "account_name": "Kryptowaehrungskonto Bitcoin",
+          "field": "TotalAmountInPortfolioCurrency",
+          "value": 6834.46,
+          "path": "clients[CASE-001].Portfolios[0].AccountPositions[3].TotalAmountInPortfolioCurrency"
+        }
+      ],
+      "priority": 1.0
+    }
+  ],
+  "portfolio_snapshot_at": "2026-09-03T11:15:26.1149572Z",
+  "history_as_of": "2026-07-01",
+  "articles": [
+    {
+      "title": "Coinbase Stock Jumped 12% Yesterday. Bitcoin’s Breakout Wasn’t the Whole Story.",
+      "url": "https://finance.yahoo.com/markets/stocks/articles/coinbase-stock-jumped-12-yesterday-090945993.html?fr=sycsrp_catchall",
+      "publisher": "TIKR · via Yahoo Finance",
+      "snippet": "Key TakeawaysBitcoin Breakout: Coinbase stock jumped 12% on Friday, September 18, closing at $194,...",
+      "published_at": "2026-09-19T09:10:00.415000+00:00",
+      "published_at_raw": "34 minutes ago",
+      "date_is_estimated": true,
+      "retrieved_at": "2026-09-19T09:44:01.267627+00:00",
+      "relevance_score": 99.93,
+      "score_components": {
+        "entity_in_title_or_snippet": 50.0,
+        "position_value_relative_to_largest_searched": 30.0,
+        "recency": 19.93
+      },
+      "matches": [
+        {
+          "term": "Bitcoin",
+          "field": "title",
+          "source_excerpt": "Coinbase Stock Jumped 12% Yesterday. Bitcoin’s Breakout Wasn’t the Whole Story.",
+          "holdings": [
+            {
+              "security_id": null,
+              "instrument_name": "Bitcoin",
+              "position_value": 6834.46,
+              "position_currency": "CHF",
+              "relation": "crypto",
+              "source_paths": [
+                "clients[CASE-001].Portfolios[0].AccountPositions[3]"
+              ]
+            }
+          ],
+          "evidence": [
+            {
+              "source": "clients.json",
+              "client_ref": "CASE-001",
+              "portfolio_id": 12291,
+              "security_id": null,
+              "account_name": "Kryptowaehrungskonto Bitcoin",
+              "field": "Currency",
+              "value": "BTC",
+              "path": "clients[CASE-001].Portfolios[0].AccountPositions[3].Currency"
+            },
+            {
+              "source": "clients.json",
+              "client_ref": "CASE-001",
+              "portfolio_id": 12291,
+              "security_id": null,
+              "account_name": "Kryptowaehrungskonto Bitcoin",
+              "field": "TotalAmountInPortfolioCurrency",
+              "value": 6834.46,
+              "path": "clients[CASE-001].Portfolios[0].AccountPositions[3].TotalAmountInPortfolioCurrency"
+            },
+            {
+              "source": "apify/scrapeai/yahoo-news-scraper",
+              "client_ref": null,
+              "portfolio_id": null,
+              "security_id": null,
+              "account_name": null,
+              "field": "title",
+              "value": "Coinbase Stock Jumped 12% Yesterday. Bitcoin’s Breakout Wasn’t the Whole Story.",
+              "path": "https://finance.yahoo.com/markets/stocks/articles/coinbase-stock-jumped-12-yesterday-090945993.html?fr=sycsrp_catchall"
+            }
+          ]
+        }
+      ],
+      "provider_run_ids": [
+        "bAkd0BWCDcwNUkkm5"
+      ]
+    },
+    {
+      "title": "Bitcoin pushes above $81K, faces liquidation test between $83K and $86K |...",
+      "url": "https://www.fxstreet.com/cryptocurrencies/news/bitcoin-pushes-above-81k-faces-liquidation-test-between-83k-and-86k-202609190625",
+      "publisher": "The Forex Market",
+      "snippet": "Bitcoin (BTC) rose above $81,000 on Friday after climbing back above the True Market Mean, signaling...",
+      "published_at": "2026-09-19T06:44:00.415000+00:00",
+      "published_at_raw": "3 hours ago",
+      "date_is_estimated": true,
+      "retrieved_at": "2026-09-19T09:44:01.267627+00:00",
+      "relevance_score": 99.64,
+      "score_components": {
+        "entity_in_title_or_snippet": 50.0,
+        "position_value_relative_to_largest_searched": 30.0,
+        "recency": 19.64
+      },
+      "matches": [
+        {
+          "term": "Bitcoin",
+          "field": "title",
+          "source_excerpt": "Bitcoin pushes above $81K, faces liquidation test between $83K and $86K |...",
+          "holdings": [
+            {
+              "security_id": null,
+              "instrument_name": "Bitcoin",
+              "position_value": 6834.46,
+              "position_currency": "CHF",
+              "relation": "crypto",
+              "source_paths": [
+                "clients[CASE-001].Portfolios[0].AccountPositions[3]"
+              ]
+            }
+          ],
+          "evidence": [
+            {
+              "source": "clients.json",
+              "client_ref": "CASE-001",
+              "portfolio_id": 12291,
+              "security_id": null,
+              "account_name": "Kryptowaehrungskonto Bitcoin",
+              "field": "Currency",
+              "value": "BTC",
+              "path": "clients[CASE-001].Portfolios[0].AccountPositions[3].Currency"
+            },
+            {
+              "source": "clients.json",
+              "client_ref": "CASE-001",
+              "portfolio_id": 12291,
+              "security_id": null,
+              "account_name": "Kryptowaehrungskonto Bitcoin",
+              "field": "TotalAmountInPortfolioCurrency",
+              "value": 6834.46,
+              "path": "clients[CASE-001].Portfolios[0].AccountPositions[3].TotalAmountInPortfolioCurrency"
+            },
+            {
+              "source": "apify/scrapeai/yahoo-news-scraper",
+              "client_ref": null,
+              "portfolio_id": null,
+              "security_id": null,
+              "account_name": null,
+              "field": "title",
+              "value": "Bitcoin pushes above $81K, faces liquidation test between $83K and $86K |...",
+              "path": "https://www.fxstreet.com/cryptocurrencies/news/bitcoin-pushes-above-81k-faces-liquidation-test-between-83k-and-86k-202609190625"
+            }
+          ]
+        }
+      ],
+      "provider_run_ids": [
+        "bAkd0BWCDcwNUkkm5"
+      ]
+    },
+    {
+      "title": "Bitcoin's Production Cost Is $78,000. What Happens When Miners Lose Money?",
+      "url": "https://247wallst.com/investing/cryptocurrency/2026/09/18/bitcoins-production-cost-is-78000-what-happens-when-miners-lose-money/",
+      "publisher": "247wallst.com",
+      "snippet": "JPMorgan estimates Bitcoin's production cost at $78,000. In one quarter, miners sold a record 32,000...",
+      "published_at": "2026-09-18T22:44:00.415000+00:00",
+      "published_at_raw": "11 hours ago",
+      "date_is_estimated": true,
+      "retrieved_at": "2026-09-19T09:44:01.267627+00:00",
+      "relevance_score": 98.69,
+      "score_components": {
+        "entity_in_title_or_snippet": 50.0,
+        "position_value_relative_to_largest_searched": 30.0,
+        "recency": 18.69
+      },
+      "matches": [
+        {
+          "term": "Bitcoin",
+          "field": "title",
+          "source_excerpt": "Bitcoin's Production Cost Is $78,000. What Happens When Miners Lose Money?",
+          "holdings": [
+            {
+              "security_id": null,
+              "instrument_name": "Bitcoin",
+              "position_value": 6834.46,
+              "position_currency": "CHF",
+              "relation": "crypto",
+              "source_paths": [
+                "clients[CASE-001].Portfolios[0].AccountPositions[3]"
+              ]
+            }
+          ],
+          "evidence": [
+            {
+              "source": "clients.json",
+              "client_ref": "CASE-001",
+              "portfolio_id": 12291,
+              "security_id": null,
+              "account_name": "Kryptowaehrungskonto Bitcoin",
+              "field": "Currency",
+              "value": "BTC",
+              "path": "clients[CASE-001].Portfolios[0].AccountPositions[3].Currency"
+            },
+            {
+              "source": "clients.json",
+              "client_ref": "CASE-001",
+              "portfolio_id": 12291,
+              "security_id": null,
+              "account_name": "Kryptowaehrungskonto Bitcoin",
+              "field": "TotalAmountInPortfolioCurrency",
+              "value": 6834.46,
+              "path": "clients[CASE-001].Portfolios[0].AccountPositions[3].TotalAmountInPortfolioCurrency"
+            },
+            {
+              "source": "apify/scrapeai/yahoo-news-scraper",
+              "client_ref": null,
+              "portfolio_id": null,
+              "security_id": null,
+              "account_name": null,
+              "field": "title",
+              "value": "Bitcoin's Production Cost Is $78,000. What Happens When Miners Lose Money?",
+              "path": "https://247wallst.com/investing/cryptocurrency/2026/09/18/bitcoins-production-cost-is-78000-what-happens-when-miners-lose-money/"
+            }
+          ]
+        }
+      ],
+      "provider_run_ids": [
+        "bAkd0BWCDcwNUkkm5"
+      ]
+    }
+  ],
+  "warnings": [
+    "clients[CASE-001].Portfolios[0].SecurityPositions: presence=absent"
+  ],
+  "skipped": [
+    {
+      "source_path": "clients[CASE-001].Portfolios[0].AccountPositions[0]",
+      "reason": "no_direct_entity_for_account"
+    },
+    {
+      "source_path": "clients[CASE-001].Portfolios[0].AccountPositions[1]",
+      "reason": "no_direct_entity_for_account"
+    },
+    {
+      "source_path": "clients[CASE-001].Portfolios[0].AccountPositions[2]",
+      "reason": "no_direct_entity_for_account"
+    }
+  ],
+  "deferred_queries": [],
+  "rejected_counts": {},
+  "failed_queries": 0,
+  "schema_version": "news-2.0"
+}
