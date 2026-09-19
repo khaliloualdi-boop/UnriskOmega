@@ -2,7 +2,7 @@
 import argparse
 import json
 from collections import Counter
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from loader import load_store_from_files
@@ -18,7 +18,7 @@ def main(argv=None):
     parser.add_argument("--clients", type=Path, default=ROOT / "clients.json")
     parser.add_argument("--reference", type=Path, default=ROOT / "reference.json")
     parser.add_argument("--no-reference", action="store_true")
-    parser.add_argument("--analysis-date", type=date.fromisoformat, default=datetime.now(timezone.utc).astimezone().date())
+    parser.add_argument("--analysis-date", type=date.fromisoformat, default=datetime.now(UTC).astimezone().date())
     parser.add_argument("--output", type=Path, default=ROOT / "outputs" / "analysis_results.json")
     args = parser.parse_args(argv)
     reference_path = None if args.no_reference else args.reference

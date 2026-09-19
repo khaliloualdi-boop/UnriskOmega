@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from processing.contracts import CheckStatus, Level, Presence, to_jsonable
+from processing.contracts import CheckStatus, Presence, to_jsonable
 from processing.dossier import DossierError, build_all, build_dossier, select_portfolio
 from processing.loader import (
     DUPLICATE_KEEP_FIRST,

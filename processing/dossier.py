@@ -18,7 +18,7 @@ Rules enforced here:
 from __future__ import annotations
 
 from collections.abc import Callable, Iterator
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from math import isfinite
 from typing import Any
 
@@ -159,7 +159,7 @@ def build_dossier(store: DataStore, client_ref: str,
              f"is not in reference.json")
 
     observed = _latest_observation(portfolio)
-    today = analysis_date or datetime.now(timezone.utc).astimezone().date()
+    today = analysis_date or datetime.now(UTC).astimezone().date()
     age = (today - observed).days if observed else None
     if age is not None and age > 45:
         note(Level.WARNING, "stale_data",
@@ -242,7 +242,7 @@ def _split_violations(client: Client, portfolio_id: int, store: DataStore,
         # else: belongs to another portfolio we do have -- not this dossier's
 
     if unscoped:
-        missing = sorted({v.portfolio_id for v in unscoped})
+        missing = sorted({v.portfolio_id for v in unscoped if v.portfolio_id is not None})
         note(Level.WARNING, "violations_for_absent_portfolio",
              f"{len(unscoped)} violation(s) name portfolio(s) {missing} which are not "
              f"in the export; kept at client level, not attributed to "

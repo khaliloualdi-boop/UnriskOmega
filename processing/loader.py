@@ -21,7 +21,7 @@ from __future__ import annotations
 import math
 import re
 from collections.abc import Callable
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Any
 
 from .contracts import (
@@ -558,7 +558,7 @@ def load_store(clients_data: Any, reference_data: Any = None, *,
     reader = _Reader(source)
     entries = _as_client_list(clients_data, reader)
 
-    store = DataStore(loaded_at=datetime.now(timezone.utc))
+    store = DataStore(loaded_at=datetime.now(UTC))
     duplicates: list[str] = []
 
     for i, entry in enumerate(entries):
