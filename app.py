@@ -230,6 +230,11 @@ with tab_news:
 
 # ============================ Advisor Chat ============================
 with tab_chat:
+    # Reset the conversation whenever the selected client/portfolio changes.
+    _chat_key = (client.client_ref, portfolio.portfolio_id)
+    if st.session_state.get("chat_client") != _chat_key:
+        st.session_state.chat_client = _chat_key
+        st.session_state.messages = []
     st.caption("Ask specific questions about holdings, performance or notes for this client.")
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -238,17 +243,13 @@ with tab_chat:
             st.markdown(msg["content"])
     if user_query := st.chat_input("Ask a question about this portfolio..."):
         st.session_state.messages.append({"role": "user", "content": user_query})
-        with st.chat_message("user"):
-            st.markdown(user_query)
-        with st.chat_message("assistant"):
-            with st.spinner("Searching the analysis..."):
-                try:
-                    bot_response = answer_chat_question(payload, user_query)
-                    st.markdown(bot_response)
-                except BriefingGenerationError as exc:
-                    bot_response = f"Error: {exc}"
-                    st.error(bot_response)
+        with st.spinner("Searching the analysis..."):
+            try:
+                bot_response = answer_chat_question(payload, user_query)
+            except BriefingGenerationError as exc:
+                bot_response = f"Error: {exc}"
         st.session_state.messages.append({"role": "assistant", "content": bot_response})
+        st.rerun()
 
 
 with st.expander("Sources and data limitations"):
