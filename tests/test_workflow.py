@@ -49,10 +49,24 @@ def test_discovery_prefers_inbox(tmp_path):
 
 class EmptyProvider:
     name = "offline-test"
-    is_fixture = True
+    # An injected transport stub exercising the production result contract.
+    is_fixture = False
 
     def search(self, query, **kwargs):
         return NewsBatch([], datetime.now(UTC), "test")
+
+
+@pytest.fixture(autouse=True)
+def isolate_news_cache(monkeypatch, tmp_path):
+    import workflow
+    from news.cache import CachedNewsProvider
+
+    monkeypatch.setattr(
+        workflow, "CachedNewsProvider",
+        lambda provider, path, **kwargs: CachedNewsProvider(
+            provider, tmp_path / "news.sqlite3", **kwargs,
+        ),
+    )
 
 
 def test_workflow_collects_news_for_unseen_case_and_passes_combined_payload(new_case):
@@ -88,6 +102,37 @@ def test_service_failure_keeps_analysis(new_case):
     assert result["errors"] == {"news": "Missing token", "briefing": "Model unavailable"}
 
 
+def test_workflow_uses_exposure_topics_and_sqlite_cache(new_case):
+    store, _ = load_case(new_case, ROOT / "reference.json")
+    queries = []
+
+    class RecordingProvider(EmptyProvider):
+        def search(self, query, **kwargs):
+            queries.append(query)
+            return super().search(query, **kwargs)
+
+    first = run_workflow(store, "UNSEEN-CLIENT", 987654,
+                         provider_factory=RecordingProvider, narrators={})
+    assert not first["errors"]
+    assert any("inflation" in query or "monetary policy" in query for query in queries)
+    count = len(queries)
+    second = run_workflow(store, "UNSEEN-CLIENT", 987654,
+                          provider_factory=RecordingProvider, narrators={})
+    assert len(queries) == count
+    assert second["payload"]["market_context"]["collection_stats"]["cache_hits"] == count
+
+
+def test_workflow_rejects_fixture_news_before_narration(new_case):
+    store, _ = load_case(new_case, ROOT / "reference.json")
+
+    class FixtureProvider(EmptyProvider):
+        is_fixture = True
+
+    with pytest.raises(ValueError, match="Fixture"):
+        run_workflow(store, "UNSEEN-CLIENT", 987654,
+                     provider_factory=FixtureProvider, narrators={})
+
+
 def test_news_cache_reuses_success_but_expires_and_tracks_case(new_case):
     store, _ = load_case(new_case, ROOT / "reference.json")
     cache = {}
@@ -110,6 +155,21 @@ def test_news_cache_reuses_success_but_expires_and_tracks_case(new_case):
     run("original")
     run("replacement")
     assert len(calls) == 3
+
+
+def test_old_direct_only_session_cache_is_refreshed(new_case):
+    store, _ = load_case(new_case, ROOT / "reference.json")
+    import time
+
+    cache = {"case": (time.monotonic(), {
+        "schema_version": "news-2.0", "client_ref": "UNSEEN-CLIENT",
+        "portfolio_id": 987654, "status": "no_results", "articles": [],
+    })}
+    result = run_workflow(store, "UNSEEN-CLIENT", 987654,
+                          provider_factory=EmptyProvider, narrators={},
+                          news_cache=cache, cache_key="case")
+    assert result["payload"]["market_context"]["schema_version"] == "news-3.0"
+    assert cache["case"][1]["schema_version"] == "news-3.0"
 
 
 def test_app_one_click_and_rerun_do_not_repeat_services(monkeypatch):

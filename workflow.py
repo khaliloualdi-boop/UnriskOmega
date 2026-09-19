@@ -16,11 +16,16 @@ from ai_engine import (
 )
 from analytics.payload import build_briefing
 from news.apify import ApifyNewsProvider
+from news.cache import CachedNewsProvider
+from news.context import context_from_briefing
 from news.models import NewsProviderError
-from news.service import collect_news, render_news_context
+from news.service import collect_news
+from news_integration import news_block
 from presentation import news_status_message
 from processing.dossier import build_dossier
 from processing.loader import load_store
+
+DEFAULT_NEWS_CACHE = Path(__file__).resolve().parent / ".cache/news.sqlite3"
 
 
 def case_files(root: Path) -> list[Path]:
@@ -53,7 +58,8 @@ def load_case(path: Path, reference_path: Path):
 
 def run_workflow(store, client_ref: str, portfolio_id: int, *,
                  provider_factory=ApifyNewsProvider, collector=collect_news,
-                 narrators=None, progress=None, news_cache=None, cache_key=None) -> dict:
+                 narrators=None, progress=None, news_cache=None, cache_key=None,
+                 news_cache_path=DEFAULT_NEWS_CACHE) -> dict:
     """Run once per button press, preserving useful results on service failure."""
     update = progress or (lambda message: None)
     update("Calculating the portfolio profile…")
@@ -65,13 +71,31 @@ def run_workflow(store, client_ref: str, portfolio_id: int, *,
     errors = {}
     try:
         cached = news_cache.get(cache_key) if news_cache is not None and cache_key is not None else None
-        if cached and 0 <= time.monotonic() - cached[0] < 1800:
+        if (cached and cached[1].get("schema_version") == "news-3.0"
+                and 0 <= time.monotonic() - cached[0] < 1800):
             update("Using news checked within the last 30 minutes…")
-            payload["market_context"] = deepcopy(cached[1])
+            payload["market_context"] = deepcopy(news_block(
+                cached[1], client_ref=client_ref, portfolio_id=portfolio_id,
+            ))
         else:
-            options = {"time_budget": 45, "max_workers": 4, "per_query_limit": 6, "progress": update} if collector is collect_news else {}
-            news = collector(dossier, provider_factory(), **options)
-            payload["market_context"] = json.loads(render_news_context(news))
+            provider = provider_factory()
+            cached_provider = None
+            options = {}
+            try:
+                if collector is collect_news:
+                    options = {
+                        "time_budget": 45, "max_workers": 4, "per_query_limit": 6,
+                        "progress": update, "context": context_from_briefing(payload, dossier),
+                    }
+                    cached_provider = CachedNewsProvider(provider, news_cache_path, max_runs=4)
+                    provider = cached_provider
+                news = collector(dossier, provider, **options)
+            finally:
+                if cached_provider is not None:
+                    cached_provider.close()
+            payload["market_context"] = news_block(
+                news, client_ref=client_ref, portfolio_id=portfolio_id,
+            )
             if (news_cache is not None and cache_key is not None
                     and news.status in {"ok", "no_results"}):
                 if len(news_cache) >= 32:

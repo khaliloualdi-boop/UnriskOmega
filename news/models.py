@@ -24,6 +24,9 @@ class NewsQuery:
     holdings: tuple[HoldingLink, ...]
     evidence: tuple[SourceRef, ...]
     priority: float = 1.0
+    exposures: tuple["ExposureLink", ...] = ()
+    required_groups: tuple[tuple[str, ...], ...] = ()
+    priority_basis: str = "relative_position_value"
 
     @property
     def security_ids(self):
@@ -36,6 +39,25 @@ class QueryPlan:
     warnings: list[str] = field(default_factory=list)
     skipped: list[dict[str, Any]] = field(default_factory=list)
     deferred_queries: list[NewsQuery] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class ExposureLink:
+    dimension: str
+    category: str
+    weight: float | None
+    basis: str
+    source_path: str
+    scope: str = "reported_exposure_not_causal_attribution"
+
+
+@dataclass
+class NewsContext:
+    client_ref: str
+    portfolio_id: int
+    portfolio_currency: str | None
+    blocks: dict[str, Any]
+    warnings: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -63,6 +85,8 @@ class ArticleMatch:
     source_excerpt: str
     holdings: list[HoldingLink]
     evidence: list[SourceRef]
+    exposures: list[ExposureLink] = field(default_factory=list)
+    supporting_terms: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -79,6 +103,9 @@ class NewsArticle:
     score_components: dict[str, float]
     matches: list[ArticleMatch]
     provider_run_ids: list[str]
+    event_terms: list[str] = field(default_factory=list)
+    impact_status: str = "not_assessed"
+    relevance: dict[str, list] = field(default_factory=dict)
 
 
 @dataclass
@@ -98,4 +125,5 @@ class NewsResult:
     deferred_queries: list[NewsQuery] = field(default_factory=list)
     rejected_counts: dict[str, int] = field(default_factory=dict)
     failed_queries: int = 0
-    schema_version: str = "news-2.0"
+    collection_stats: dict[str, Any] = field(default_factory=dict)
+    schema_version: str = "news-3.0"

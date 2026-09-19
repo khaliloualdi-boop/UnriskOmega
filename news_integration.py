@@ -11,8 +11,8 @@ Two rules, both from the M6 spec:
   * No network here. News is COLLECTED elsewhere (news.service.collect_news, which
     takes a provider) and the finished NewsResult is passed in. This keeps
     build_briefing_payload pure and offline, exactly as its docstring promises.
-  * An empty/None bundle leaves the payload identical to a normal run. News can
-    never break the core; the worst case is that it adds nothing.
+  * None leaves the payload identical to a normal run. Invalid bundles are
+    rejected explicitly before they can contaminate another client's briefing.
 """
 
 from __future__ import annotations
@@ -32,27 +32,40 @@ __all__ = [
 ]
 
 
-def news_block(news_result: Any | None) -> dict[str, Any] | None:
+def news_block(news_result: Any | None, *, client_ref=None, portfolio_id=None) -> dict[str, Any] | None:
     """Turn a NewsResult into the plain dict the payload carries, or None.
 
-    None in -> None out. Anything already a dict is passed through untouched, so
-    a caller that pre-rendered the news can hand it straight in.
+    None in -> None out. A valid dictionary is retained unchanged; identity and
+    shape are checked so a query plan or another client's result cannot slip in.
     """
     if news_result is None:
         return None
     if isinstance(news_result, dict):
-        return news_result
+        parsed = news_result
     # render_news_context returns a JSON string; parse it back to a dict so the
     # payload holds structured data, not a string blob.
-    parsed = json.loads(render_news_context(news_result))
+    else:
+        parsed = json.loads(render_news_context(news_result))
     if not isinstance(parsed, dict):
         raise TypeError("Rendered news context must be a JSON object.")
+    if parsed.get("mode") or parsed.get("schema_version") not in {"news-2.0", "news-3.0"}:
+        raise ValueError("Expected a news result, not a query plan or an unrelated JSON file.")
+    if client_ref is not None and parsed.get("client_ref") != client_ref:
+        raise ValueError("News client does not match the briefing client.")
+    if portfolio_id is not None and parsed.get("portfolio_id") != portfolio_id:
+        raise ValueError("News portfolio does not match the briefing portfolio.")
+    if parsed.get("status") not in {"ok", "partial", "no_results", "unavailable"}:
+        raise ValueError("Invalid news status.")
+    if parsed.get("is_fixture"):
+        raise ValueError("Fixture news must not be attached to a production briefing.")
+    if not isinstance(parsed.get("articles"), list):
+        raise ValueError("News articles must be a list.")  # noqa: TRY004 - invalid external JSON contract
     return parsed
 
 
 def attach_news(payload: BriefingPayload, news_result: Any | None) -> BriefingPayload:
     """Set payload.news in place and return it. A None result is a no-op."""
-    block = news_block(news_result)
+    block = news_block(news_result, client_ref=payload.client_ref, portfolio_id=payload.portfolio_id)
     if block is not None:
         payload.news = block
     return payload

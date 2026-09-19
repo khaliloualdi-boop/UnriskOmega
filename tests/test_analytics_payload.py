@@ -70,6 +70,8 @@ def test_data_quality_present_and_lists_unavailable(store, cohort):
 def test_news_context_is_attached_without_recalculation(store, cohort):
     news = {
         "schema_version": "news-2.0",
+        "client_ref": "CASE-002",
+        "portfolio_id": select_portfolio(store, "CASE-002"),
         "status": "ok",
         "articles": [{"title": "Portfolio-specific update"}],
     }

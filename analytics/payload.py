@@ -162,7 +162,9 @@ def build_briefing(
         "accounts_by_currency": accts, "lookthrough": look,
         "saa_drift": drift, "guardrails": guard, "peers": peers,
     }
-    market_context = news_block(news_result)
+    market_context = news_block(
+        news_result, client_ref=getattr(client, "client_ref", None), portfolio_id=portfolio_id,
+    )
     if market_context is None:
         market_context = {"status": "to_be_provided_by_market_data_team"}
 

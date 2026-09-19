@@ -146,3 +146,19 @@ and standing interpretation notes for the narration layer.
 The generated payload uses schema `briefing/0.1`. Projections are reproducible
 for the same input, path count, horizon, and seed. They are scenario analysis,
 not forecasts or investment advice.
+
+## News query integration (v3)
+
+The app now searches reported sector, region, asset-class and currency exposures
+alongside direct holdings. Topic matches require a financial event and retain
+their analytics evidence. See [news/README.md](news/README.md) for commands.
+
+Public article batches are cached in `.cache/news.sqlite3` for one hour.
+Each app collection allows at most four new Apify runs; the app preserves parallel
+searches, its 45-second deadline, and the 30-minute session cache. Cached
+articles are filtered again for each portfolio. No extra dependency is required.
+
+Inspect queries offline with `uv run python -m news CASE-002 --plan`.
+Use `--direct-only` for the legacy CLI targeting. Only a live result, never a
+query plan, can be attached as `market_context.articles`. News results must
+match the selected client and portfolio; both news-2.0 and news-3.0 are accepted.

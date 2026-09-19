@@ -40,6 +40,11 @@ Distinguish news status no_results (search completed, no qualifying articles)
 from partial (incomplete coverage) and unavailable (news could not be retrieved).
 Keep dates and material data limitations visible; missing values are not zero."""
 
+_NEWS_RULES = """For news claims, cite the supplied article URL. Exposure and event
+matches establish relevance only: impact_status not_assessed means economic
+impact has not been measured. Never invent underlying holdings or assert that
+current news caused historical portfolio losses."""
+
 
 class BriefingGenerationError(RuntimeError):
     """A briefing could not be generated or the model returned no text."""
@@ -47,7 +52,7 @@ class BriefingGenerationError(RuntimeError):
 
 def _is_reasoning_model(name: str) -> bool:
     n = (name or "").lower()
-    return n.startswith("gpt-5") or n.startswith(("o1", "o3", "o4"))
+    return n.startswith(("gpt-5", "o1", "o3", "o4"))
 
 
 def build_briefing_prompt(payload: Mapping[str, Any]) -> str:
@@ -79,7 +84,7 @@ def _narrate(instructions: str, input_text: str, *, model: str | None,
     model_name = model or os.getenv("OPENAI_MODEL", DEFAULT_MODEL)
     request: dict[str, Any] = {
         "model": model_name,
-        "instructions": instructions + "\n\n" + _PRESENTATION,
+        "instructions": instructions + "\n\n" + _PRESENTATION + "\n\n" + _NEWS_RULES,
         "input": input_text,
         "max_output_tokens": MAX_OUTPUT_TOKENS,
         "store": False,

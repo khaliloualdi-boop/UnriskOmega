@@ -9,11 +9,13 @@ from processing.contracts import ClientDossier, SourceRef
 
 from .models import HoldingLink, NewsQuery, QueryPlan
 
-CRYPTO_NAMES = {"BTC": "Bitcoin", "ETH": "Ethereum"}
+CRYPTO_NAMES = {"BTC": "Bitcoin", "ETH": "Ethereum", "DOT": "Polkadot",
+                "SOL": "Solana", "SHIB": "Shiba Inu"}
 ISIN = re.compile(r"[A-Z]{2}[A-Z0-9]{9}[0-9]")
 AMBIGUOUS_NAMES = {
     "cat", "meta", "apple", "shell", "target", "gap", "visa", "alphabet",
     "total", "block", "next", "arm", "orange",
+    "polkadot", "solana", "shiba inu",
 }
 # These are not public entity names and may never be used alone as aliases.
 GENERIC_NAMES = {
@@ -159,8 +161,8 @@ def build_queries(dossier: ClientDossier, *, aliases=None, max_queries=4) -> Que
             merged[key] = [amount, query]
         else:
             prior_amount, prior = merged[key]
-            # Use strongest individual position as priority; avoid a total across duplicates.
-            merged[key] = [max(amount, prior_amount), replace(
+            # Different SecurityIds are separate positions; preserve their combined exposure.
+            merged[key] = [math.fsum((amount, prior_amount)), replace(
                 prior, match_terms=tuple(dict.fromkeys(prior.match_terms + query.match_terms)),
                 holdings=prior.holdings + query.holdings, evidence=prior.evidence + query.evidence,
             )]

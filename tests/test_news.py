@@ -333,7 +333,7 @@ class ApifyTests(unittest.TestCase):
         data = json.loads(run.stdout)
         self.assertEqual(data["mode"], "query_plan")
         self.assertNotIn("articles", data)
-        self.assertEqual(len(data["plan"]["queries"]), 1)
+        self.assertEqual(len(data["plan"]["queries"]), 4)
         self.assertIn("VZ Holding", data["plan"]["queries"][0]["text"])
 
 

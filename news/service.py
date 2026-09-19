@@ -10,7 +10,9 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from processing.contracts import ClientDossier, SourceRef, to_jsonable
 
 from .models import ArticleMatch, NewsArticle, NewsProviderError, NewsResult
-from .queries import AMBIGUOUS_NAMES, build_queries, normalize
+from .planning import plan_news
+from .queries import AMBIGUOUS_NAMES, ISIN, normalize
+from .topics import EVENTS
 
 BUSINESS_TERMS = (
     "stock", "stocks", "shares", "shareholders", "earnings", "dividend", "dividends",
@@ -18,6 +20,7 @@ BUSINESS_TERMS = (
     "acquisition", "merger", "takeover", "bankruptcy", "nasdaq", "nyse",
     "lawsuit", "recall", "regulatory", "antitrust", "profit", "profits",
     "restructuring", "layoffs", "ceo", "valuation", "cash flow",
+    "crypto", "cryptocurrency", "blockchain", "token", "tokens", "staking", "ETF",
 )
 
 
@@ -75,6 +78,11 @@ def parse_publication(value, anchor):
         return None, False
 
 
+def _contains(text, term):
+    needle = normalize(term)
+    return bool(needle) and f" {needle} " in f" {text} "
+
+
 # Generic name-parts that carry no entity signal on their own.
 _NAME_STOP_TOKENS = {
     "the", "and", "for", "fund", "funds", "index", "class", "shares", "units",
@@ -89,7 +97,7 @@ def _significant_tokens(term):
     return [t for t in normalize(term).split() if len(t) >= 4 and t not in _NAME_STOP_TOKENS]
 
 
-def _contains(text, term):
+def _contains_entity(text, term):
     """A term is present if its exact phrase appears, OR (for multi-word names)
     all of its distinctive tokens appear as words anywhere in the text.
 
@@ -114,9 +122,19 @@ def _matches(title, snippet, queries, provider, url):
     priorities = []
     text = normalize(title + " " + snippet)
     for query in queries:
+        if not all(
+            any(_contains(text, word) for word in group) for group in query.required_groups
+        ):
+            continue
+        supporting = [word for group in query.required_groups for word in group if _contains(text, word)]
+        contains = _contains if query.kind == "market_exposure" else _contains_entity
         for term in query.match_terms:
-            field = "title" if _contains(normalize(title), term) else (
-                "snippet" if _contains(normalize(snippet), term) else None
+            # The supplied reference contains duplicate ISINs. An identifier alone
+            # cannot resolve which held product/company an article refers to.
+            if ISIN.fullmatch(term) and not contains(text, query.match_terms[0]):
+                continue
+            field = "title" if contains(normalize(title), term) else (
+                "snippet" if contains(normalize(snippet), term) else None
             )
             if field is None:
                 continue
@@ -129,7 +147,9 @@ def _matches(title, snippet, queries, provider, url):
                 holdings=list(query.holdings),
                 evidence=list(query.evidence) + [
                     SourceRef(source=provider, path=url, field=field, value=excerpt),
-                ],
+                ] + ([SourceRef(source=provider, path=url, field="snippet", value=snippet)]
+                     if supporting and field == "title" and snippet else []),
+                exposures=list(query.exposures), supporting_terms=sorted(set(supporting)),
             ))
             priorities.append(query.priority)
     return matches, max(priorities, default=0.0)
@@ -137,9 +157,20 @@ def _matches(title, snippet, queries, provider, url):
 
 def _identities(article):
     return {
-        (h.security_id, h.source_paths)
+        ("holding", h.security_id, h.source_paths)
         for match in article.matches for h in match.holdings
-    }
+    } | {("exposure", e.dimension, e.category)
+         for match in article.matches for e in match.exposures}
+
+
+def _relevance(matches):
+    tags = {"security_ids": sorted({h.security_id for m in matches for h in m.holdings
+                                    if h.security_id is not None})}
+    for dimension, label in (("industry", "industries"), ("region", "regions"),
+                             ("asset_class", "asset_classes"), ("currency", "currencies"),
+                             ("currency_pair", "currency_pairs")):
+        tags[label] = sorted({e.category for m in matches for e in m.exposures if e.dimension == dimension})
+    return tags
 
 
 def _search_batches(queries, provider, limit, lookback_days, budget, workers, progress):
@@ -152,7 +183,8 @@ def _search_batches(queries, provider, limit, lookback_days, budget, workers, pr
             raise NewsProviderError("News search time limit reached.")
         # Apify supports a shared deadline; other provider contracts remain valid.
         from .apify import ApifyNewsProvider
-        options = {"deadline": deadline} if isinstance(provider, ApifyNewsProvider) else {}
+        from .cache import CachedNewsProvider
+        options = {"deadline": deadline} if isinstance(provider, (ApifyNewsProvider, CachedNewsProvider)) else {}
         return provider.search(query.text, limit=limit, lookback_days=lookback_days, **options)
 
     pending = {pool.submit(search, query): index for index, query in enumerate(queries)}
@@ -186,17 +218,18 @@ def _search_batches(queries, provider, limit, lookback_days, budget, workers, pr
 
 def collect_news(
     dossier: ClientDossier, provider, *, as_of=None, lookback_days=7,
-    max_articles=3, per_query_limit=10, aliases=None, max_queries=4,
+    max_articles=3, per_query_limit=10, aliases=None, max_queries=4, context=None,
     time_budget=60, max_workers=1, progress=None,
 ) -> NewsResult:
-    """Zero results are valid: no broad-market fallback or synthesized article."""
+    """Select evidence-linked current news, never synthesize an article or a cause."""
     now = _utc(as_of or datetime.now(UTC))
     if not 0 < time_budget <= 120 or not (isinstance(max_workers, int) and not isinstance(max_workers, bool) and 1 <= max_workers <= 8):
         raise ValueError("Use a positive news budget up to 120 seconds and 1-8 workers.")
     for value, lower, upper in ((max_articles, 1, 3), (lookback_days, 1, 30), (per_query_limit, 1, 20)):
         if not isinstance(value, int) or isinstance(value, bool) or not lower <= value <= upper:
             raise ValueError("Use 1–3 articles, 1–30 days and 1–20 candidates per query.")
-    plan = build_queries(dossier, aliases=aliases, max_queries=max_queries)
+    plan = plan_news(dossier, context=context, aliases=aliases, max_queries=max_queries)
+    before = dict(getattr(provider, "stats", {}))
     result = NewsResult(
         client_ref=dossier.client_ref, portfolio_id=dossier.portfolio_id, as_of=now,
         provider=provider.name, is_fixture=provider.is_fixture,
@@ -217,7 +250,14 @@ def collect_news(
             result.failed_queries += 1
             result.warnings.append(f"query={query.text}: {batch}")
             continue
-        retrieved = _utc(batch.retrieved_at)
+        try:
+            retrieved = _utc(batch.retrieved_at)
+            if not isinstance(batch.items, list) or retrieved > now + timedelta(minutes=10):
+                raise ValueError("Invalid provider batch")
+        except (ValueError, AttributeError):
+            result.failed_queries += 1
+            result.warnings.append("Provider returned an invalid batch or retrieval date.")
+            continue
         for row in batch.items[:per_query_limit]:
             if not isinstance(row, dict) or row.get("error"):
                 rejects["invalid_record"] += 1
@@ -247,13 +287,15 @@ def collect_news(
                 continue
             matches, priority = _matches(title, snippet, plan.queries, provider.name, url)
             if not matches:
-                rejects["no_direct_holding_match"] += 1
+                rejects["no_portfolio_exposure_match" if context else "no_direct_holding_match"] += 1
                 continue
             age = max(0, (now - published).total_seconds() / 86400)
+            event_terms = sorted({term for term in EVENTS if _contains(normalize(title + " " + snippet), term)})
             components = {
                 "entity_in_title_or_snippet": 50.0 if any(m.field == "title" for m in matches) else 30.0,
-                "position_value_relative_to_largest_searched": round(30 * priority, 2),
-                "recency": round(20 * (1 - age / lookback_days), 2),
+                "search_priority": round(25 * priority, 2),
+                "recency": round(15 * (1 - age / lookback_days), 2),
+                "identified_event": 10.0 if event_terms else 0.0,
             }
             candidates.append(NewsArticle(
                 title=title, url=url, publisher=publisher, snippet=snippet,
@@ -261,6 +303,8 @@ def collect_news(
                 date_is_estimated=estimated, retrieved_at=retrieved,
                 relevance_score=round(sum(components.values()), 2), score_components=components,
                 matches=matches, provider_run_ids=[batch.run_id] if batch.run_id else [],
+                event_terms=event_terms,
+                relevance=_relevance(matches),
             ))
     candidates.sort(key=lambda a: (-a.relevance_score, -a.published_at.timestamp(), a.url))
     unique, by_url, by_title = [], {}, {}
@@ -273,6 +317,7 @@ def collect_news(
                 if match not in prior.matches:
                     prior.matches.append(match)
             prior.provider_run_ids = sorted(set(prior.provider_run_ids + article.provider_run_ids))
+            prior.relevance = _relevance(prior.matches)
             by_url[article.url] = prior
             by_title[title_key] = prior
             continue
@@ -293,6 +338,8 @@ def collect_news(
             selected.append(article)
     result.articles = selected
     result.rejected_counts = dict(rejects)
+    result.collection_stats = {key: value - before.get(key, 0)
+                               for key, value in getattr(provider, "stats", {}).items()}
     if plan.queries:
         if result.failed_queries == len(plan.queries):
             result.status = "unavailable"
@@ -314,14 +361,19 @@ def render_news_context(result: NewsResult) -> str:
         "news_as_of": result.as_of,
         "portfolio_snapshot_at": result.portfolio_snapshot_at,
         "history_as_of": result.history_as_of,
+        "collection_stats": result.collection_stats,
         "articles": [
             {
                 "title": a.title, "source": a.publisher, "url": a.url,
                 "published_at": a.published_at, "date_is_estimated": a.date_is_estimated,
                 "snippet": a.snippet,
+                "relevance_score": a.relevance_score, "score_components": a.score_components,
+                "event_terms": a.event_terms, "impact_status": a.impact_status,
+                "relevance": a.relevance,
                 "matches": [
                     {"term": m.term, "field": m.field, "source_excerpt": m.source_excerpt,
-                     "holdings": m.holdings}
+                     "holdings": m.holdings, "exposures": m.exposures,
+                     "supporting_terms": m.supporting_terms, "evidence": m.evidence}
                     for m in a.matches
                 ],
             }

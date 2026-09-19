@@ -213,3 +213,16 @@ Proposed shape:
 - **Never include** account identifiers or IBANs — those never appear in this
   payload and must not be added.
 ```
+## Implemented news contract (v3)
+
+The current integration uses `market_context.articles[]`. The extended
+`news[]` proposal above is not the implemented wire contract.
+Pass a collected news-3.0 (or compatible news-2.0) result via `news_result`;
+query plans, fixture results and mismatched client/portfolio identities are
+rejected. A missing result still leaves the existing placeholder intact.
+
+Articles include evidence-linked `matches`, `exposures`, `supporting_terms`,
+`relevance` tags and `event_terms`. `impact_status: not_assessed` means
+relevance is not a measured economic impact or an attribution of historical
+losses. Collection statistics report cache hits, new runs and budget blocking.
+See [the news module guide](../news/README.md) for collection and caching.

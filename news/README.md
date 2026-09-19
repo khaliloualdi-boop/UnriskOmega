@@ -1,148 +1,152 @@
-# News directement reliées au portefeuille
+# News ciblées — version 3
 
-Version de sortie : news-2.0. Entrée : ClientDossier produit par les collègues.
-Les fichiers pipeline.py et processing/contracts.py restent inchangés.
+Le module produit des articles sourcés, pas des conseils financiers ni une explication automatique des pertes.
+Les données personnelles du client, ses montants et ses notes ne sont jamais transmis à Apify.
 
-## Recherche réelle
+## Parcours
 
-Dans le terminal où APIFY_TOKEN est déjà exporté :
+1. `context.py` réutilise les analyses de positions, comptes, allocation et fonds ; aucune simulation ni comparaison de pairs.
+2. `planning.py` choisit les recherches à partir des expositions observées et conserve leur provenance.
+3. `apify.py` appelle l’Actor existant `scrapeai/yahoo-news-scraper`.
+4. `cache.py` partage les résultats publics entre clients et limite les nouveaux runs.
+5. `service.py` filtre, classe et déduplique les articles pour chaque portefeuille.
+6. `news_integration.py` contrôle l’identité avant l’ajout au briefing.
 
-~~~bash
-uv run python -m news CASE-016 --live
-~~~
+Les règles de vocabulaire sont communes aux portefeuilles ; aucun identifiant CASE ne déclenche de logique spéciale.
 
-Pour créer un fichier JSON séparé :
+## Voir les recherches, sans appel payant
 
-~~~bash
-uv run python -m news CASE-016 --live --output outputs/news-CASE-016-direct.json
-~~~
+Depuis la racine du projet :
 
-Le fichier doit être nouveau ; aucun ancien résultat n'est écrasé.
-Sans --output, le JSON est écrit dans le terminal. --format text produit une
-version compacte des mêmes faits pour l'agrégateur, sans paragraphe rédigé.
+```bash
+uv run python -m news CASE-002 --plan
+uv run python -m news CASE-006 --portfolio-id 376 --plan
+uv run python -m news.audit --plan --output outputs/news-plans-all.json
+```
 
-Le programme ne contient plus de fournisseur de démonstration. Il exige --live
-ou --plan. Sans token, --live échoue explicitement et ne génère aucun article.
+Le dossier de sortie doit exister et le fichier ne doit pas déjà exister.
+Un plan ne contient pas d’articles et ne peut pas être attaché au briefing comme résultat news.
 
-## Examiner les mots-clés avant de payer
+Pour réutiliser un briefing déjà calculé :
 
-~~~bash
-uv run python -m news CASE-016 --plan
-uv run python -m news CASE-023 --plan
-uv run python -m news CASE-004 --plan
-~~~
+```bash
+uv run python -m news CASE-002 --plan --briefing outputs/briefing-CASE-002.json
+```
 
---plan lit les vraies données : requêtes, positions associées, preuves, éléments
-ignorés et requêtes reportées. Il ne contacte pas Apify et ne crée aucune news.
+L’identité client/portefeuille et la devise sont vérifiées. Sans `--briefing`, seuls les calculs utiles aux news sont exécutés.
+Sans `--portfolio-id`, le sélecteur partagé choisit un portefeuille du client, pas tous ses portefeuilles.
 
-## Ce qui personnalise la recherche
+## Collecte réelle
 
-- Noms des titres réellement détenus, joints à reference.json par SecurityId.
-- Montants positifs en devise du portefeuille pour prioriser ces positions.
-- Nom identifiable de l'émetteur pour une obligation ; le lien conserve le nom
-  et l'identifiant de l'obligation exacte.
-- Nom spécifique du fonds ou ETF : jamais son gestionnaire seul.
-- ISIN exact quand disponible et non contradictoire avec la référence.
-- Bitcoin/Ethereum seulement si les comptes exportés indiquent BTC/ETH détenus.
+Exporter APIFY_TOKEN dans le même terminal, sans le mettre dans le code ou un fichier versionné.
 
-Les recherches « equity markets », « bond markets », pays/secteur seul et devises
-génériques sont supprimées. Un portefeuille uniquement en cash peut donc ne
-produire aucune requête. Les émetteurs publics aux noms très ambigus ont un
-contrôle supplémentaire de contexte économique dans le titre/extrait.
+```bash
+uv run python -m news CASE-002 --live --max-runs 4 --output outputs/news-CASE-002-v3.json
+uv run python build_briefing.py CASE-002 --news outputs/news-CASE-002-v3.json --output outputs/briefing-CASE-002-v3.json
+```
 
-Quatre entités maximum sont recherchées par défaut ; les autres sont listées dans
-deferred_queries. On peut utiliser --max-queries 1 à 12 pour ajuster explicitement
-la couverture et le budget. Aucun AUM manquant n'est remplacé par zéro.
+Attention : contrairement à la commande news, `build_briefing.py --output` peut remplacer un fichier existant ; choisir un nouveau nom.
 
-Un fonds au nom d'export trop complexe peut nécessiter un alias vérifié, conservant
-l'identité du produit. Le code ne devine ni son ticker ni ses sous-jacents.
-Un fichier --aliases peut contenir un objet JSON reliant les SecurityId aux noms
-publics vérifiés. Les noms génériques sont refusés. Il faut vérifier soi-même que
-chaque alias désigne bien l'instrument, surtout pour les fonds.
+- 4 recherches au maximum par défaut (`--max-queries`, 1 à 12).
+- 10 candidats par recherche, au plus 3 articles retenus.
+- Fenêtre de 7 jours, configurable avec `--lookback-days` de 1 à 30.
+- `--max-runs` limite strictement le nombre de nouveaux runs ; 0 autorise seulement les cache hits.
+- Le fournisseur demande à Apify un plafond de 0,05 USD par run. Ce n’est pas une mesure du coût facturé.
+- Aucun retry automatique du POST créant un run payant.
 
-## Sélection et preuves
+Pour auditer les résultats réels sur tous les portefeuilles :
 
-Chaque article retenu contient matches avec :
-- term : entreprise, fonds, crypto ou ISIN effectivement trouvé ;
-- field : title ou snippet ;
-- source_excerpt : le titre/extrait fourni par la source, utilisé pour ce lien ;
-- holdings : identifiant et nom du titre, montant, devise, relation et chemin source ;
-- evidence : provenance des champs du portefeuille et du passage de l'article.
+```bash
+uv run python -m news.audit --live --max-runs 10 --output outputs/news-audit-live.json
+```
 
-Aucune relevance_reason préécrite, synthèse de marché ou recommandation automatique.
-Les titres/extraits sont fournis par Apify (espaces normalisés, longueurs limitées).
-La sortie ne prétend pas avoir lu le corps complet de l'article.
+Cette commande est payante. Le budget de runs est GLOBAL, non multiplié par le nombre de clients.
+Avec un budget limité, certains portefeuilles peuvent rester partiellement couverts ; le rapport le montre.
+L’audit inclut les vues consolidées séparément mais ne somme jamais leurs avoirs.
+Un audit avec échecs/budget épuisé renvoie le code 1 et conserve le rapport.
 
-Le score est transparent dans score_components : mention dans le titre ou l'extrait,
-valeur de la position relative à la plus grande position recherchée et récence.
-C'est un classement déterministe de pertinence textuelle, pas une estimation
-d'impact financier ou une validation de la véracité de l'article.
+## Ciblage et priorités
 
-Les doublons sont regroupés et conservent leurs liens aux positions.
-La sélection privilégie la couverture de positions différentes avant de répéter
-une même entité, dans la limite de trois articles au total.
+- Titres : nom réel, ISIN en recherche, identité conservée par SecurityId.
+- Fonds : recherche du produit et des secteurs/régions classifiés par l’analyse sous-jacente.
+- Liquidités : devise explicitement renseignée et événements monétaires ; paire de change pour un compte étranger.
+- Crypto : codes explicitement reconnus, jamais une devise inconnue convertie arbitrairement en crypto.
+- Secteur/région : seuil de poids 10 %, classe d’actifs 25 %, devise agrégée 15 %, compte liquide 5 % si le poids est connu.
+- Une devise de compte connue reste recherchable lorsque son poids est inconnu.
+- Les catégories non classées ou non prises en charge sont signalées, pas remplacées par une recherche fourre-tout.
 
-Des clients détenant le même titre peuvent recevoir légitimement la même actualité.
-Aucune différence artificielle n'est générée pour faire paraître les sorties uniques.
+Les poids sont ceux du moteur. Leurs dénominateurs sont conservés : une répartition des titres n’est pas présentée comme celle du portefeuille total.
+Le classement de recherche est une heuristique documentée : poids × spécificité (secteur 0,9 ; change 0,85 ; devise 0,65 ; région 0,6 ; classe d’actifs 0,35).
+Une exposition connue sans poids reçoit une priorité de recherche conventionnelle de 0,25 avant ce facteur, jamais un poids financier inventé.
+Les positions directes utilisent les poids disponibles (facteur fonds 0,6), sinon la priorité relative historique.
 
-## Résultats et limites
+Le budget réserve des places aux positions directes et aux différentes dimensions. Un portefeuille de fonds réserve une seule place directe quand des recherches d’exposition existent.
+Les sujets différés restent visibles. Ces choix optimisent un budget de recherche, pas un impact économique mesuré.
 
-0 à 3 articles, jamais de remplissage. Les articles sans date exploitable, trop
-anciens/futurs, sponsorisés ou sans nom d'une exposition recherchée sont exclus.
-Les dates relatives sont signalées date_is_estimated=true. Fenêtre : 7 jours,
-tolérance d'horloge : 5 minutes. portfolio_snapshot_at et history_as_of restent
-séparés de la date de recherche. La fraîcheur des news ne confirme pas la fraîcheur
-des positions de portefeuille.
+## Sélection des articles
 
-- ok : au moins un article qualifié et aucune requête en échec.
-- no_results : appels réussis, aucun article qualifié.
-- partial : certaines requêtes ont échoué, avec leur texte dans warnings.
-- unavailable : aucune recherche possible ou tous les appels ont échoué.
+Exigences communes : titre, éditeur, URL HTTP(S) sans identifiants intégrés, date admissible, absence de sponsoring.
+Les dates relatives sont ancrées à la collecte d’origine, même après un cache hit.
 
-Un nom absent de l'extrait peut faire manquer un article pertinent.
-Le rapprochement ne prouve pas l'impact financier et ne détecte pas parfaitement
-les homonymes. Les liens sont inspectables précisément pour cette raison.
-La comparaison House View et le branchement au pipeline commun restent à faire.
+- Une news instrument doit mentionner l’entité dans le titre ou l’extrait ; les noms ambigus nécessitent un contexte financier. Un ISIN seul ne suffit pas, car le référentiel contient des doublons.
+- Une news de marché doit mentionner le sujet lié à l’exposition ET un événement financier.
+- Les passages justificatifs et leurs sources sont conservés.
+- Le score additionne mention titre/extrait (50/30), priorité (jusqu’à 25), fraîcheur (jusqu’à 15) et présence d’un événement (10).
+- Déduplication par URL nettoyée ou titre normalisé, puis diversification des expositions.
 
-## Apify et budget
+Il ne s’agit pas d’une lecture sémantique exhaustive des articles : le fournisseur donne des titres/extraits.
+`impact_status: not_assessed` interdit d’interpréter le score comme une prévision ou une preuve de causalité.
+Le même événement peut légitimement être pertinent pour plusieurs clients exposés au même sujet.
 
-Actor : https://apify.com/scrapeai/yahoo-news-scraper
-Adaptateur propre à cet Actor ; un autre Actor nécessite son propre mapping.
+## Cache et confidentialité
 
-Seuls les noms publics/ISIN partent dans les requêtes. Les identités clients, notes
-et montants restent locaux. Le token est lu depuis APIFY_TOKEN, envoyé en en-tête,
-jamais écrit dans le JSON. Le module ne charge aucun .env.
+Cache SQLite local : `.cache/news.sqlite3`, ignoré par Git.
+Durée de validité : 1 heure ; les dates de publication sont toujours filtrées à nouveau.
+Clé : fournisseur, mode test/réel, requête, fenêtre et limite. Aucune identité client, aucun token, aucun montant.
+Une réservation évite deux lancements simultanés identiques ; un échec incertain impose un délai de 10 minutes.
+`--no-cache` utilise seulement un cache mémoire pour cette invocation ; relancer peut donc coûter à nouveau.
+Le classement client n’est jamais mis en cache avec les articles publics.
 
-Un appel par entité, 10 candidats par appel, plafond demandé de 0,05 USD par run.
-Donc 0,20 USD maximum demandé pour quatre requêtes ; avec --max-queries 12,
-le plafond demandé atteint 0,60 USD. Aucun nouvel essai automatique d'un POST
-échoué. Aucun cache persistant : relancer --live crée de nouveaux runs.
+## Contrat et compatibilité
 
-Docs : https://apify.com/scrapeai/yahoo-news-scraper/input-schema
-et https://docs.apify.com/api/v2/actors-runs-post
+Sortie `schema_version: news-3.0` ; les champs principaux de news-2.0 restent présents :
+`client_ref`, `portfolio_id`, `status`, `articles`, `queries`, `warnings`.
+Ajouts : `exposures`, `supporting_terms`, `relevance`, `event_terms`, `impact_status`, `collection_stats`.
+Les composantes de score ont changé : utiliser `score_components` sans présumer les anciens noms.
 
-## Intégration sans fichier
+Statuts : `ok`, `no_results`, `partial`, `unavailable`. Un résultat vide honnête est acceptable.
+Le JSON détaillé conserve la traçabilité ; `--format text` fournit aussi du JSON, dans une forme plus compacte.
+`news_integration` accepte news-2.0 et news-3.0 avec identité valide. Les plans, formats inconnus et résultats d’un autre portefeuille sont refusés.
+Le moteur IA consomme le bloc attaché ; la recherche NewsAPI concurrente a été retirée.
 
-~~~python
-from news import collect_news, render_news_context
-from news.apify import ApifyNewsProvider
-from processing.contracts import to_jsonable
+API :
+```python
+from news import build_news_context, collect_news
+context = build_news_context(store, dossier)
+result = collect_news(dossier, provider, context=context)
+```
 
-result = collect_news(dossier, ApifyNewsProvider())
-payload = to_jsonable(result)
-context = render_news_context(result)
-~~~
+L’appel historique sans `context` reste direct-only. La CLI utilise par défaut les nouvelles expositions.
+`--direct-only` permet de retrouver le ciblage historique.
 
-Changement de schéma : relevance_reason / matched_keywords / matched_security_ids
-sont remplacés par matches. Les mocks d'articles existent seulement dans les tests.
+## Limites et vérification
 
-## Tests
+- Recherche actuelle uniquement : l’Actor n’est pas utilisé pour attribuer une baisse ancienne.
+- L’historique fourni est non corrigé des flux et ses dates peuvent être décalées.
+- Les positions actuelles ne prouvent pas les positions historiques.
+- Les compositions de fonds n’ont ni noms d’entreprises sous-jacentes ni date ; certains libellés géographiques sont peu fiables.
+- Les recherches de devises utilisent les catégories rapportées, pas une mesure garantie du risque de change après couverture.
+- Aucun article, sentiment, impact, House View ou citation n’est inventé.
+- Les devises/secteurs inconnus et positions courtes sont signalés comme limites de couverture.
 
-~~~bash
+```bash
 uv run pytest -q
-~~~
+uv run python -m news.audit --plan --output outputs/news-coverage.json
+```
 
-Régressions : les trois titres réels hors sujet obtenus précédemment pour CASE-016
-sont rejetés ; les mêmes candidats produisent des résultats différents pour deux
-portefeuilles distincts ; un article sur le gestionnaire seul ne suffit pas pour
-un fonds ; aucune erreur API n'est remplacée par une fausse actualité.
+Les tests hors ligne utilisent des fournisseurs simulés uniquement dans tests/. Ils ne prouvent pas la qualité du flux réel.
+La validation réelle doit examiner, par famille de portefeuille, les liens de pertinence, erreurs d’identité, fraîcheur, couverture, temps et coût.
+L’interface utilise le contexte du briefing déjà calculé, avec quatre recherches
+en parallèle, un délai global de 45 secondes et le cache SQLite partagé.
+Le cache protège les réservations et le budget entre threads et conserve les
+résultats publics pendant une heure. Le cache de session de 30 minutes reste actif.

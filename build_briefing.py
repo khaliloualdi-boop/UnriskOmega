@@ -46,7 +46,10 @@ def main(argv=None):
         if not isinstance(news_result, dict):
             ap.error("--news must contain one JSON object")
 
-    payload = build_briefing(store, profile, n_paths=args.paths, news_result=news_result)
+    try:
+        payload = build_briefing(store, profile, n_paths=args.paths, news_result=news_result)
+    except ValueError as exc:
+        ap.error(str(exc))
     text = json.dumps(payload, indent=2, ensure_ascii=False, allow_nan=False)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
