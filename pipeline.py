@@ -3,6 +3,7 @@
 Only largest-position concentration findings are implemented in this milestone.
 Other checks are explicitly marked not implemented, even if inputs are available.
 """
+import json
 from concentration import analyze_concentration
 from findings import build_concentration_finding
 from processing.contracts import (
@@ -125,3 +126,37 @@ def analyze_portfolio(
         briefing_payload=_build_payload(dossier, result),
     )
     return to_jsonable(result)
+
+# ---------------------------------------------------------------------------
+# CHATBOT INTEGRATION HELPERS
+# ---------------------------------------------------------------------------
+
+def build_chat_context_string(dossier: ClientDossier) -> str:
+    """Converts a ClientDossier and its computed BriefingPayload into a 
+    text context payload specifically formatted for LLM system prompts.
+    """
+    # 1. Generate the deterministic payload
+    payload = build_briefing_payload(dossier)
+    
+    # 2. Extract CRM notes and qualitative fields directly from dossier object
+    crm_notes = getattr(dossier.client, "notes", []) or getattr(dossier, "notes", [])
+    proposals = getattr(dossier, "proposals", [])
+    violations = getattr(dossier, "violations", [])
+
+    # 3. Serialize payload and extra data into a readable string for GPT
+    payload_dict = to_jsonable(payload)
+    
+    context_text = f"""
+=== CLIENT BRIEFING PAYLOAD ===
+{json.dumps(payload_dict, indent=2)}
+
+=== CRM NOTES & COMMUNICATIONS ===
+{json.dumps(to_jsonable(crm_notes), indent=2)}
+
+=== OPEN PROPOSALS ===
+{json.dumps(to_jsonable(proposals), indent=2)}
+
+=== ACTIVE VIOLATIONS ===
+{json.dumps(to_jsonable(violations), indent=2)}
+"""
+    return context_text

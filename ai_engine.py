@@ -181,3 +181,27 @@ Everything is framed as items for the advisor to review, not personalized invest
 instructions, and does not claim the full articles were read. {_DISCLAIMER}"""
     return _narrate(instructions, build_briefing_prompt(payload),
                     model=model, openai_client=openai_client)
+
+
+# --------------------------------------------------------------------------
+# Section 4: Interactive Advisor Chatbot
+# --------------------------------------------------------------------------
+def answer_chat_question(
+    payload: Mapping[str, Any],
+    user_question: str,
+    *,
+    model: str | None = None,
+    openai_client: Any | None = None,
+) -> str:
+    """Answers advisor questions directly with minimal token usage."""
+    _guard_available(payload)
+
+    instructions = (
+        f"You are a concise wealth advisor AI. {_NO_INVENT} {_UNTRUSTED}\n"
+        "Answer the question directly in under 100 words using ONLY the provided JSON context.\n"
+        "If the information is missing, state: 'Data unavailable in client record.'\n"
+        f"{_DISCLAIMER}"
+    )
+
+    input_text = f"{build_briefing_prompt(payload)}\n\nUSER QUESTION: {user_question}"
+    return _narrate(instructions, input_text, model=model, openai_client=openai_client)

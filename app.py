@@ -111,7 +111,9 @@ st.subheader(f"{client.display_name} · portfolio {profile['portfolio_number'] o
 st.caption(f"Analysis date: {payload.get('analysis_date') or 'unknown'} · "
            f"News status: {payload['market_context'].get('status', 'attached')}")
 
-tab_now, tab_dev, tab_news = st.tabs(["Current situation", "Development", "News & advice"])
+tab_now, tab_dev, tab_news, tab_chat = st.tabs(
+    ["Current situation", "Development", "News & advice", "Advisor Chat"]
+)
 
 # ============================ Section 1: current situation (no AI) ============================
 with tab_now:
@@ -186,3 +188,34 @@ with tab_news:
                     st.markdown(advise_from_news(payload))
                 except BriefingGenerationError as exc:
                     st.error(str(exc))
+                    
+
+# ============================ Section 4: Chatbot ============================
+with tab_chat:
+    st.caption("Ask specific questions about holdings, performance, or notes for this client.")
+
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    # Display chat history
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    # Handle user input
+    if user_query := st.chat_input("Ask a question about this portfolio..."):
+        st.session_state.messages.append({"role": "user", "content": user_query})
+        with st.chat_message("user"):
+            st.markdown(user_query)
+
+        with st.chat_message("assistant"):
+            with st.spinner("Searching payload..."):
+                try:
+                    from ai_engine import answer_chat_question
+                    bot_response = answer_chat_question(payload, user_query)
+                    st.markdown(bot_response)
+                except BriefingGenerationError as exc:
+                    bot_response = f"Error: {exc}"
+                    st.error(bot_response)
+
+        st.session_state.messages.append({"role": "assistant", "content": bot_response})
