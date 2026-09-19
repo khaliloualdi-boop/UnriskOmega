@@ -1,4 +1,5 @@
-"""Attach Sohaib's news module output to the shared BriefingPayload.
+"""Payload-assembly layer for the API: attach news, preserve the full
+finding collection. Wraps the pipeline without modifying it.
 
 Owner: Mohamed. This is the M6 external-input adapter, kept deliberately thin.
 
@@ -26,7 +27,10 @@ from pipeline import build_briefing_payload
 # shape Sohaib maintains. Reuse it so we inherit any format change he makes.
 from news.service import render_news_context
 
-__all__ = ["attach_news", "build_payload_with_news", "news_block"]
+__all__ = [
+    "attach_news", "build_payload_with_news", "news_block",
+    "preserve_all_findings",
+]
 
 
 def news_block(news_result: Any | None) -> dict[str, Any] | None:
@@ -52,6 +56,26 @@ def attach_news(payload: BriefingPayload, news_result: Any | None) -> BriefingPa
     return payload
 
 
+def preserve_all_findings(payload, full_findings=None):
+    """Guarantee payload.all_findings holds the COMPLETE finding collection.
+
+    Why: selected_findings is only what the 60-second briefing shows. A follow-up
+    chatbot (and any evidence lookup) needs everything the analysis produced. This
+    keeps the full set in the payload so a later narrowing step can trim
+    selected_findings without discarding anything.
+
+    full_findings: the complete list, when the caller has one (e.g. Khalil's
+    analytics before it narrows for display). When omitted, all_findings defaults
+    to a copy of selected_findings -- correct today, since nothing narrows yet.
+    Idempotent and never destructive: an already-populated all_findings is kept.
+    """
+    if full_findings is not None:
+        payload.all_findings = list(full_findings)
+    elif not payload.all_findings:
+        payload.all_findings = list(payload.selected_findings)
+    return payload
+
+
 def build_payload_with_news(
     dossier,
     news_result: Any | None = None,
@@ -68,4 +92,5 @@ def build_payload_with_news(
         largest_threshold=largest_threshold,
         top_five_threshold=top_five_threshold,
     )
+    preserve_all_findings(payload)
     return attach_news(payload, news_result)
