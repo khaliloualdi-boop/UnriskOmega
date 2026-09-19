@@ -41,6 +41,8 @@ def reconcile_portfolio(dossier: ClientDossier, tolerance=0.01):
     }
     if missing:
         return result
+    if recorded is None:
+        return result
     try:
         total = fsum(amounts)
     except OverflowError:

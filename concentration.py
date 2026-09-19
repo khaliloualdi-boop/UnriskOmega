@@ -19,6 +19,9 @@ def analyze_concentration(
     if not availability.ok:
         return {"status": "unavailable", "reason": availability.reason}
     portfolio = dossier.portfolio
+    portfolio_value = portfolio.aum_in_default_currency
+    if portfolio_value is None:
+        return {"status": "unavailable", "reason": "Portfolio AUM is unavailable"}
     positions = list(dossier.security_positions)
     if not positions:
         return {
@@ -35,9 +38,9 @@ def analyze_concentration(
         }
     positions.sort(key=lambda p: (-p.total_amount_in_portfolio_currency, p.security_id))
     largest = positions[0]
-    weight = largest.total_amount_in_portfolio_currency / portfolio.aum_in_default_currency
+    weight = largest.total_amount_in_portfolio_currency / portfolio_value
     top_five = fsum(p.total_amount_in_portfolio_currency for p in positions[:5])
-    top_five_weight = top_five / portfolio.aum_in_default_currency
+    top_five_weight = top_five / portfolio_value
     if not isfinite(weight) or not isfinite(top_five_weight):
         return {"status": "unavailable", "reason": "Concentration exceeds the supported numeric range"}
     return {

@@ -204,6 +204,7 @@ def test_evidence_points_to_original_values(store, raw_data):
             for evidence in finding.evidence:
                 if evidence.source != "clients.json":
                     continue
+                assert evidence.path is not None
                 head, tail = evidence.path.split("]", 1)
                 obj = by_ref[head.removeprefix("clients[")]
                 for name, index in re.findall(r"([A-Za-z_][A-Za-z_0-9]*)|\[(\d+)\]", tail):

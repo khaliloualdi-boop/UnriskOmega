@@ -193,7 +193,7 @@ class _Reader:
         value = self.number(obj, key, path, **ctx)
         if value is None:
             return None
-        if value.is_integer():
+        if float(value).is_integer():
             return int(value)
         self.note(Level.WARNING, "non_integer_identifier",
                   f"{path}.{key} is {value}, expected a whole number", path,
