@@ -69,7 +69,7 @@ def run_workflow(store, client_ref: str, portfolio_id: int, *,
             update("Using news checked within the last 30 minutes…")
             payload["market_context"] = deepcopy(cached[1])
         else:
-            options = {"time_budget": 60, "max_workers": 2, "progress": update} if collector is collect_news else {}
+            options = {"time_budget": 45, "max_workers": 4, "per_query_limit": 6, "progress": update} if collector is collect_news else {}
             news = collector(dossier, provider_factory(), **options)
             payload["market_context"] = json.loads(render_news_context(news))
             if (news_cache is not None and cache_key is not None

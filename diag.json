@@ -1,0 +1,715 @@
+{
+  "client_ref": "CASE-002",
+  "portfolio_id": 52253,
+  "as_of": "2026-09-19T12:39:12.996672+00:00",
+  "provider": "apify/scrapeai/yahoo-news-scraper",
+  "is_fixture": false,
+  "status": "partial",
+  "queries": [
+    {
+      "text": "\"Credit Suisse Index Fd (CH) Umbrella - CSIF (CH) Equity Switzerland Large Cap Blue\" OR \"CH0214404714\"",
+      "kind": "fund",
+      "match_terms": [
+        "Credit Suisse Index Fd (CH) Umbrella - CSIF (CH) Equity Switzerland Large Cap Blue",
+        "CH0214404714"
+      ],
+      "holdings": [
+        {
+          "security_id": 3007,
+          "instrument_name": "Anteile -FB- Credit Suisse Index Fd (CH) Umbrella - CSIF (CH) Equity Switzerland Large Cap Blue",
+          "position_value": 26959.36,
+          "position_currency": "CHF",
+          "relation": "fund",
+          "source_paths": [
+            "clients[CASE-002].Portfolios[0].SecurityPositions[3]"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-002",
+          "portfolio_id": 52253,
+          "security_id": 3007,
+          "account_name": null,
+          "field": "TotalAmountInPortfolioCurrency",
+          "value": 26959.36,
+          "path": "clients[CASE-002].Portfolios[0].SecurityPositions[3].TotalAmountInPortfolioCurrency"
+        },
+        {
+          "source": "reference.json",
+          "client_ref": null,
+          "portfolio_id": null,
+          "security_id": 3007,
+          "account_name": null,
+          "field": "Name",
+          "value": "Anteile -FB- Credit Suisse Index Fd (CH) Umbrella - CSIF (CH) Equity Switzerland Large Cap Blue",
+          "path": "Securities[Id=3007].Name"
+        }
+      ],
+      "priority": 1.0
+    },
+    {
+      "text": "\"--A- UBS (Lux) Fund Solutions SICAV - MSCI World Socially Responsible UCITS ETF\" OR \"LU0629459743\"",
+      "kind": "fund",
+      "match_terms": [
+        "--A- UBS (Lux) Fund Solutions SICAV - MSCI World Socially Responsible UCITS ETF",
+        "LU0629459743"
+      ],
+      "holdings": [
+        {
+          "security_id": 8716,
+          "instrument_name": "Anteile --A- UBS (Lux) Fund Solutions SICAV  - MSCI World Socially Responsible UCITS ETF",
+          "position_value": 20712.0,
+          "position_currency": "CHF",
+          "relation": "fund",
+          "source_paths": [
+            "clients[CASE-002].Portfolios[0].SecurityPositions[9]"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-002",
+          "portfolio_id": 52253,
+          "security_id": 8716,
+          "account_name": null,
+          "field": "TotalAmountInPortfolioCurrency",
+          "value": 20712.0,
+          "path": "clients[CASE-002].Portfolios[0].SecurityPositions[9].TotalAmountInPortfolioCurrency"
+        },
+        {
+          "source": "reference.json",
+          "client_ref": null,
+          "portfolio_id": null,
+          "security_id": 8716,
+          "account_name": null,
+          "field": "Name",
+          "value": "Anteile --A- UBS (Lux) Fund Solutions SICAV  - MSCI World Socially Responsible UCITS ETF",
+          "path": "Securities[Id=8716].Name"
+        }
+      ],
+      "priority": 0.7682674959642959
+    },
+    {
+      "text": "\"SSGA SPDR ETFs Europe I PLC - SPDR Bloomberg Global Aggregate Bond UCITS ETF\" OR \"IE00BF1QPK61\"",
+      "kind": "fund",
+      "match_terms": [
+        "SSGA SPDR ETFs Europe I PLC - SPDR Bloomberg Global Aggregate Bond UCITS ETF",
+        "IE00BF1QPK61"
+      ],
+      "holdings": [
+        {
+          "security_id": 6721,
+          "instrument_name": "Anteile -Hedged CHF- SSGA SPDR ETFs Europe I PLC - SPDR Bloomberg Global Aggregate Bond UCITS ETF",
+          "position_value": 18903.5,
+          "position_currency": "CHF",
+          "relation": "fund",
+          "source_paths": [
+            "clients[CASE-002].Portfolios[0].SecurityPositions[5]"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-002",
+          "portfolio_id": 52253,
+          "security_id": 6721,
+          "account_name": null,
+          "field": "TotalAmountInPortfolioCurrency",
+          "value": 18903.5,
+          "path": "clients[CASE-002].Portfolios[0].SecurityPositions[5].TotalAmountInPortfolioCurrency"
+        },
+        {
+          "source": "reference.json",
+          "client_ref": null,
+          "portfolio_id": null,
+          "security_id": 6721,
+          "account_name": null,
+          "field": "Name",
+          "value": "Anteile -Hedged CHF- SSGA SPDR ETFs Europe I PLC - SPDR Bloomberg Global Aggregate Bond UCITS ETF",
+          "path": "Securities[Id=6721].Name"
+        }
+      ],
+      "priority": 0.701185042968379
+    },
+    {
+      "text": "\"AB SICAV I SICAV - Short Duration High Yield Portfolio\" OR \"LU1747737002\"",
+      "kind": "fund",
+      "match_terms": [
+        "AB SICAV I SICAV - Short Duration High Yield Portfolio",
+        "LU1747737002"
+      ],
+      "holdings": [
+        {
+          "security_id": 19648,
+          "instrument_name": "Anteile -W2 CHF H- AB SICAV I SICAV - Short Duration High Yield Portfolio",
+          "position_value": 15940.0,
+          "position_currency": "CHF",
+          "relation": "fund",
+          "source_paths": [
+            "clients[CASE-002].Portfolios[0].SecurityPositions[14]"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-002",
+          "portfolio_id": 52253,
+          "security_id": 19648,
+          "account_name": null,
+          "field": "TotalAmountInPortfolioCurrency",
+          "value": 15940.0,
+          "path": "clients[CASE-002].Portfolios[0].SecurityPositions[14].TotalAmountInPortfolioCurrency"
+        },
+        {
+          "source": "reference.json",
+          "client_ref": null,
+          "portfolio_id": null,
+          "security_id": 19648,
+          "account_name": null,
+          "field": "Name",
+          "value": "Anteile -W2 CHF H- AB SICAV I SICAV - Short Duration High Yield Portfolio",
+          "path": "Securities[Id=19648].Name"
+        }
+      ],
+      "priority": 0.5912603266546387
+    }
+  ],
+  "portfolio_snapshot_at": "2026-09-03T11:13:00.1423256Z",
+  "history_as_of": "2026-07-01",
+  "articles": [],
+  "warnings": [
+    "query=\"SSGA SPDR ETFs Europe I PLC - SPDR Bloomberg Global Aggregate Bond UCITS ETF\" OR \"IE00BF1QPK61\": News search time limit reached; coverage is incomplete.",
+    "query=\"AB SICAV I SICAV - Short Duration High Yield Portfolio\" OR \"LU1747737002\": News search time limit reached; coverage is incomplete."
+  ],
+  "skipped": [
+    {
+      "source_path": "clients[CASE-002].Portfolios[0].AccountPositions[0]",
+      "reason": "no_direct_entity_for_account"
+    }
+  ],
+  "deferred_queries": [
+    {
+      "text": "\"Credit Suisse Index Fd (CH) Umbrella - CSIF (CH) Bond Switzerland Corporate Blue\" OR \"CH0348320497\"",
+      "kind": "fund",
+      "match_terms": [
+        "Credit Suisse Index Fd (CH) Umbrella - CSIF (CH) Bond Switzerland Corporate Blue",
+        "CH0348320497"
+      ],
+      "holdings": [
+        {
+          "security_id": 12687,
+          "instrument_name": "Anteile -QB- Credit Suisse Index Fd (CH) Umbrella - CSIF (CH) Bond Switzerland Corporate Blue",
+          "position_value": 14500.66382,
+          "position_currency": "CHF",
+          "relation": "fund",
+          "source_paths": [
+            "clients[CASE-002].Portfolios[0].SecurityPositions[12]"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-002",
+          "portfolio_id": 52253,
+          "security_id": 12687,
+          "account_name": null,
+          "field": "TotalAmountInPortfolioCurrency",
+          "value": 14500.66382,
+          "path": "clients[CASE-002].Portfolios[0].SecurityPositions[12].TotalAmountInPortfolioCurrency"
+        },
+        {
+          "source": "reference.json",
+          "client_ref": null,
+          "portfolio_id": null,
+          "security_id": 12687,
+          "account_name": null,
+          "field": "Name",
+          "value": "Anteile -QB- Credit Suisse Index Fd (CH) Umbrella - CSIF (CH) Bond Switzerland Corporate Blue",
+          "path": "Securities[Id=12687].Name"
+        }
+      ],
+      "priority": 0.5378712187529674
+    },
+    {
+      "text": "\"CHF (Hedged) PIMCO Funds Glob.Inv.Series - Global Investment Grade Credit Fund\" OR \"IE00B4YLF345\"",
+      "kind": "fund",
+      "match_terms": [
+        "CHF (Hedged) PIMCO Funds Glob.Inv.Series - Global Investment Grade Credit Fund",
+        "IE00B4YLF345"
+      ],
+      "holdings": [
+        {
+          "security_id": 1211,
+          "instrument_name": "Anteile CHF (Hedged) PIMCO Funds Glob.Inv.Series - Global Investment Grade Credit Fund",
+          "position_value": 13762.156,
+          "position_currency": "CHF",
+          "relation": "fund",
+          "source_paths": [
+            "clients[CASE-002].Portfolios[0].SecurityPositions[2]"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-002",
+          "portfolio_id": 52253,
+          "security_id": 1211,
+          "account_name": null,
+          "field": "TotalAmountInPortfolioCurrency",
+          "value": 13762.156,
+          "path": "clients[CASE-002].Portfolios[0].SecurityPositions[2].TotalAmountInPortfolioCurrency"
+        },
+        {
+          "source": "reference.json",
+          "client_ref": null,
+          "portfolio_id": null,
+          "security_id": 1211,
+          "account_name": null,
+          "field": "Name",
+          "value": "Anteile CHF (Hedged) PIMCO Funds Glob.Inv.Series - Global Investment Grade Credit Fund",
+          "path": "Securities[Id=1211].Name"
+        }
+      ],
+      "priority": 0.5104778451713987
+    },
+    {
+      "text": "\"dis- UBS ETF (CH) - MSCI Switzerland IMI Socially Responsible\" OR \"CH0368190739\"",
+      "kind": "fund",
+      "match_terms": [
+        "dis- UBS ETF (CH) - MSCI Switzerland IMI Socially Responsible",
+        "CH0368190739"
+      ],
+      "holdings": [
+        {
+          "security_id": 4566,
+          "instrument_name": "Anteile -(CHF) A-dis- UBS ETF (CH)  - MSCI Switzerland IMI Socially Responsible",
+          "position_value": 12907.5,
+          "position_currency": "CHF",
+          "relation": "fund",
+          "source_paths": [
+            "clients[CASE-002].Portfolios[0].SecurityPositions[4]"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-002",
+          "portfolio_id": 52253,
+          "security_id": 4566,
+          "account_name": null,
+          "field": "TotalAmountInPortfolioCurrency",
+          "value": 12907.5,
+          "path": "clients[CASE-002].Portfolios[0].SecurityPositions[4].TotalAmountInPortfolioCurrency"
+        },
+        {
+          "source": "reference.json",
+          "client_ref": null,
+          "portfolio_id": null,
+          "security_id": 4566,
+          "account_name": null,
+          "field": "Name",
+          "value": "Anteile -(CHF) A-dis- UBS ETF (CH)  - MSCI Switzerland IMI Socially Responsible",
+          "path": "Securities[Id=4566].Name"
+        }
+      ],
+      "priority": 0.4787762024024309
+    },
+    {
+      "text": "\"Swisscanto (CH) Real Estate Fund Responsible IFCA\" OR \"CH0037430946\"",
+      "kind": "fund",
+      "match_terms": [
+        "Swisscanto (CH) Real Estate Fund Responsible IFCA",
+        "CH0037430946"
+      ],
+      "holdings": [
+        {
+          "security_id": 622,
+          "instrument_name": "Anteile -FA CHF- Swisscanto (CH) Real Estate Fund Responsible IFCA",
+          "position_value": 10500.0,
+          "position_currency": "CHF",
+          "relation": "fund",
+          "source_paths": [
+            "clients[CASE-002].Portfolios[0].SecurityPositions[0]"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-002",
+          "portfolio_id": 52253,
+          "security_id": 622,
+          "account_name": null,
+          "field": "TotalAmountInPortfolioCurrency",
+          "value": 10500.0,
+          "path": "clients[CASE-002].Portfolios[0].SecurityPositions[0].TotalAmountInPortfolioCurrency"
+        },
+        {
+          "source": "reference.json",
+          "client_ref": null,
+          "portfolio_id": null,
+          "security_id": 622,
+          "account_name": null,
+          "field": "Name",
+          "value": "Anteile -FA CHF- Swisscanto (CH) Real Estate Fund Responsible IFCA",
+          "path": "Securities[Id=622].Name"
+        }
+      ],
+      "priority": 0.38947512107112336
+    },
+    {
+      "text": "\"Vontobel Fund (CH) II - Ethos Equities Swiss Mid & Small\" OR \"CH0023568022\"",
+      "kind": "fund",
+      "match_terms": [
+        "Vontobel Fund (CH) II - Ethos Equities Swiss Mid & Small",
+        "CH0023568022"
+      ],
+      "holdings": [
+        {
+          "security_id": 1128,
+          "instrument_name": "Anteile -A- Vontobel Fund (CH) II  - Ethos Equities Swiss Mid & Small",
+          "position_value": 9471.4,
+          "position_currency": "CHF",
+          "relation": "fund",
+          "source_paths": [
+            "clients[CASE-002].Portfolios[0].SecurityPositions[1]"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-002",
+          "portfolio_id": 52253,
+          "security_id": 1128,
+          "account_name": null,
+          "field": "TotalAmountInPortfolioCurrency",
+          "value": 9471.4,
+          "path": "clients[CASE-002].Portfolios[0].SecurityPositions[1].TotalAmountInPortfolioCurrency"
+        },
+        {
+          "source": "reference.json",
+          "client_ref": null,
+          "portfolio_id": null,
+          "security_id": 1128,
+          "account_name": null,
+          "field": "Name",
+          "value": "Anteile -A- Vontobel Fund (CH) II  - Ethos Equities Swiss Mid & Small",
+          "path": "Securities[Id=1128].Name"
+        }
+      ],
+      "priority": 0.35132139635362264
+    },
+    {
+      "text": "\"SSgA SPDR ETFs Europe II PLC - SPDR MSCI World Health Care UCITS ETF\" OR \"IE00BYTRRB94\"",
+      "kind": "fund",
+      "match_terms": [
+        "SSgA SPDR ETFs Europe II PLC - SPDR MSCI World Health Care UCITS ETF",
+        "IE00BYTRRB94"
+      ],
+      "holdings": [
+        {
+          "security_id": 9186,
+          "instrument_name": "Anteile -ETF- SSgA SPDR ETFs Europe II PLC  - SPDR MSCI World Health Care UCITS ETF",
+          "position_value": 6806.45013,
+          "position_currency": "CHF",
+          "relation": "fund",
+          "source_paths": [
+            "clients[CASE-002].Portfolios[0].SecurityPositions[10]"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-002",
+          "portfolio_id": 52253,
+          "security_id": 9186,
+          "account_name": null,
+          "field": "TotalAmountInPortfolioCurrency",
+          "value": 6806.45013,
+          "path": "clients[CASE-002].Portfolios[0].SecurityPositions[10].TotalAmountInPortfolioCurrency"
+        },
+        {
+          "source": "reference.json",
+          "client_ref": null,
+          "portfolio_id": null,
+          "security_id": 9186,
+          "account_name": null,
+          "field": "Name",
+          "value": "Anteile -ETF- SSgA SPDR ETFs Europe II PLC  - SPDR MSCI World Health Care UCITS ETF",
+          "path": "Securities[Id=9186].Name"
+        }
+      ],
+      "priority": 0.2524707608044108
+    },
+    {
+      "text": "\"USD Xtrackers(IE)PLC - Xtrackers MSCI World ESG UCITS ETF\" OR \"IE00BZ02LR44\"",
+      "kind": "fund",
+      "match_terms": [
+        "USD Xtrackers(IE)PLC - Xtrackers MSCI World ESG UCITS ETF",
+        "IE00BZ02LR44"
+      ],
+      "holdings": [
+        {
+          "security_id": 19030,
+          "instrument_name": "Anteile -1C- USD Xtrackers(IE)PLC  - Xtrackers MSCI World ESG UCITS ETF",
+          "position_value": 6677.90416,
+          "position_currency": "CHF",
+          "relation": "fund",
+          "source_paths": [
+            "clients[CASE-002].Portfolios[0].SecurityPositions[13]"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-002",
+          "portfolio_id": 52253,
+          "security_id": 19030,
+          "account_name": null,
+          "field": "TotalAmountInPortfolioCurrency",
+          "value": 6677.90416,
+          "path": "clients[CASE-002].Portfolios[0].SecurityPositions[13].TotalAmountInPortfolioCurrency"
+        },
+        {
+          "source": "reference.json",
+          "client_ref": null,
+          "portfolio_id": null,
+          "security_id": 19030,
+          "account_name": null,
+          "field": "Name",
+          "value": "Anteile -1C- USD Xtrackers(IE)PLC  - Xtrackers MSCI World ESG UCITS ETF",
+          "path": "Securities[Id=19030].Name"
+        }
+      ],
+      "priority": 0.24770262202070079
+    },
+    {
+      "text": "\"Exchange Traded Fund USD iShares II PLC - iShares Global Water UCITS ETF\" OR \"IE00B1TXK627\"",
+      "kind": "fund",
+      "match_terms": [
+        "Exchange Traded Fund USD iShares II PLC - iShares Global Water UCITS ETF",
+        "IE00B1TXK627"
+      ],
+      "holdings": [
+        {
+          "security_id": 8147,
+          "instrument_name": "Anteile Exchange Traded Fund USD iShares II PLC - iShares Global Water UCITS ETF",
+          "position_value": 6664.33694,
+          "position_currency": "CHF",
+          "relation": "fund",
+          "source_paths": [
+            "clients[CASE-002].Portfolios[0].SecurityPositions[7]"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-002",
+          "portfolio_id": 52253,
+          "security_id": 8147,
+          "account_name": null,
+          "field": "TotalAmountInPortfolioCurrency",
+          "value": 6664.33694,
+          "path": "clients[CASE-002].Portfolios[0].SecurityPositions[7].TotalAmountInPortfolioCurrency"
+        },
+        {
+          "source": "reference.json",
+          "client_ref": null,
+          "portfolio_id": null,
+          "security_id": 8147,
+          "account_name": null,
+          "field": "Name",
+          "value": "Anteile Exchange Traded Fund USD iShares II PLC - iShares Global Water UCITS ETF",
+          "path": "Securities[Id=8147].Name"
+        }
+      ],
+      "priority": 0.24719937491097713
+    },
+    {
+      "text": "\"Xtrackers II SICAV - EUR Corporate Bond SRI PAB UCITS ETF\" OR \"LU0484968812\"",
+      "kind": "fund",
+      "match_terms": [
+        "Xtrackers II SICAV - EUR Corporate Bond SRI PAB UCITS ETF",
+        "LU0484968812"
+      ],
+      "holdings": [
+        {
+          "security_id": 12059,
+          "instrument_name": "Anteile -1D- Xtrackers II SICAV - EUR Corporate Bond SRI PAB UCITS ETF",
+          "position_value": 6072.60533,
+          "position_currency": "CHF",
+          "relation": "fund",
+          "source_paths": [
+            "clients[CASE-002].Portfolios[0].SecurityPositions[11]"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-002",
+          "portfolio_id": 52253,
+          "security_id": 12059,
+          "account_name": null,
+          "field": "TotalAmountInPortfolioCurrency",
+          "value": 6072.60533,
+          "path": "clients[CASE-002].Portfolios[0].SecurityPositions[11].TotalAmountInPortfolioCurrency"
+        },
+        {
+          "source": "reference.json",
+          "client_ref": null,
+          "portfolio_id": null,
+          "security_id": 12059,
+          "account_name": null,
+          "field": "Name",
+          "value": "Anteile -1D- Xtrackers II SICAV - EUR Corporate Bond SRI PAB UCITS ETF",
+          "path": "Securities[Id=12059].Name"
+        }
+      ],
+      "priority": 0.2252503520113237
+    },
+    {
+      "text": "\"Exchange Traded Fund USD iShares II PLC - Global Clean Energy UCITS ETF\" OR \"IE00B1XNHC34\"",
+      "kind": "fund",
+      "match_terms": [
+        "Exchange Traded Fund USD iShares II PLC - Global Clean Energy UCITS ETF",
+        "IE00B1XNHC34"
+      ],
+      "holdings": [
+        {
+          "security_id": 8150,
+          "instrument_name": "Anteile Exchange Traded Fund USD iShares II PLC - Global Clean Energy UCITS ETF",
+          "position_value": 5920.78872,
+          "position_currency": "CHF",
+          "relation": "fund",
+          "source_paths": [
+            "clients[CASE-002].Portfolios[0].SecurityPositions[8]"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-002",
+          "portfolio_id": 52253,
+          "security_id": 8150,
+          "account_name": null,
+          "field": "TotalAmountInPortfolioCurrency",
+          "value": 5920.78872,
+          "path": "clients[CASE-002].Portfolios[0].SecurityPositions[8].TotalAmountInPortfolioCurrency"
+        },
+        {
+          "source": "reference.json",
+          "client_ref": null,
+          "portfolio_id": null,
+          "security_id": 8150,
+          "account_name": null,
+          "field": "Name",
+          "value": "Anteile Exchange Traded Fund USD iShares II PLC - Global Clean Energy UCITS ETF",
+          "path": "Securities[Id=8150].Name"
+        }
+      ],
+      "priority": 0.2196190384341468
+    },
+    {
+      "text": "\"Exchange Traded Fund USD iShares PLC - USD Treasury Bond 1-3 UCITS ETF\" OR \"IE00B14X4S71\"",
+      "kind": "fund",
+      "match_terms": [
+        "Exchange Traded Fund USD iShares PLC - USD Treasury Bond 1-3 UCITS ETF",
+        "IE00B14X4S71"
+      ],
+      "holdings": [
+        {
+          "security_id": 8074,
+          "instrument_name": "Anteile Exchange Traded Fund USD iShares PLC - USD Treasury Bond 1-3 UCITS ETF",
+          "position_value": 5736.14725,
+          "position_currency": "CHF",
+          "relation": "fund",
+          "source_paths": [
+            "clients[CASE-002].Portfolios[0].SecurityPositions[6]"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-002",
+          "portfolio_id": 52253,
+          "security_id": 8074,
+          "account_name": null,
+          "field": "TotalAmountInPortfolioCurrency",
+          "value": 5736.14725,
+          "path": "clients[CASE-002].Portfolios[0].SecurityPositions[6].TotalAmountInPortfolioCurrency"
+        },
+        {
+          "source": "reference.json",
+          "client_ref": null,
+          "portfolio_id": null,
+          "security_id": 8074,
+          "account_name": null,
+          "field": "Name",
+          "value": "Anteile Exchange Traded Fund USD iShares PLC - USD Treasury Bond 1-3 UCITS ETF",
+          "path": "Securities[Id=8074].Name"
+        }
+      ],
+      "priority": 0.21277015663576582
+    },
+    {
+      "text": "\"Ethereum\"",
+      "kind": "crypto",
+      "match_terms": [
+        "Ethereum"
+      ],
+      "holdings": [
+        {
+          "security_id": null,
+          "instrument_name": "Ethereum",
+          "position_value": 2186.62,
+          "position_currency": "CHF",
+          "relation": "crypto",
+          "source_paths": [
+            "clients[CASE-002].Portfolios[0].AccountPositions[1]"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-002",
+          "portfolio_id": 52253,
+          "security_id": null,
+          "account_name": "Kryptowaehrungskonto Ethereum",
+          "field": "Currency",
+          "value": "ETH",
+          "path": "clients[CASE-002].Portfolios[0].AccountPositions[1].Currency"
+        },
+        {
+          "source": "clients.json",
+          "client_ref": "CASE-002",
+          "portfolio_id": 52253,
+          "security_id": null,
+          "account_name": "Kryptowaehrungskonto Ethereum",
+          "field": "TotalAmountInPortfolioCurrency",
+          "value": 2186.62,
+          "path": "clients[CASE-002].Portfolios[0].AccountPositions[1].TotalAmountInPortfolioCurrency"
+        }
+      ],
+      "priority": 0.08110800849871806
+    }
+  ],
+  "rejected_counts": {},
+  "failed_queries": 2,
+  "schema_version": "news-2.0"
+}

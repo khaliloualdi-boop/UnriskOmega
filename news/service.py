@@ -75,9 +75,37 @@ def parse_publication(value, anchor):
         return None, False
 
 
+# Generic name-parts that carry no entity signal on their own.
+_NAME_STOP_TOKENS = {
+    "the", "and", "for", "fund", "funds", "index", "class", "shares", "units",
+    "etf", "holding", "holdings", "group", "company", "capital", "partners",
+    "trust", "series", "ucits", "sicav", "plc", "inc", "ltd", "llc", "corp",
+    "nv", "spa", "se", "gmbh", "co", "und", "aktien", "anteile",
+}
+
+
+def _significant_tokens(term):
+    """Distinctive words of an entity name (>= 4 chars, not a generic suffix)."""
+    return [t for t in normalize(term).split() if len(t) >= 4 and t not in _NAME_STOP_TOKENS]
+
+
 def _contains(text, term):
+    """A term is present if its exact phrase appears, OR (for multi-word names)
+    all of its distinctive tokens appear as words anywhere in the text.
+
+    Broadening beyond an exact contiguous phrase is what stops relevant articles
+    from being ruled out: 'Credit Suisse Group AG' now matches an article that
+    says 'Credit Suisse's shares fell'. Single short tokens still require an exact
+    word match, so ambiguous tickers do not over-match.
+    """
     needle = normalize(term)
-    return bool(needle) and f" {needle} " in f" {text} "
+    if not needle:
+        return False
+    padded = f" {text} "
+    if f" {needle} " in padded:
+        return True
+    tokens = _significant_tokens(term)
+    return len(tokens) >= 1 and all(f" {tok} " in padded for tok in tokens)
 
 
 def _matches(title, snippet, queries, provider, url):
@@ -163,8 +191,8 @@ def collect_news(
 ) -> NewsResult:
     """Zero results are valid: no broad-market fallback or synthesized article."""
     now = _utc(as_of or datetime.now(UTC))
-    if not 0 < time_budget <= 120 or max_workers not in (1, 2):
-        raise ValueError("Use a positive news budget up to 120 seconds and one or two workers.")
+    if not 0 < time_budget <= 120 or not (isinstance(max_workers, int) and not isinstance(max_workers, bool) and 1 <= max_workers <= 8):
+        raise ValueError("Use a positive news budget up to 120 seconds and 1-8 workers.")
     for value, lower, upper in ((max_articles, 1, 3), (lookback_days, 1, 30), (per_query_limit, 1, 20)):
         if not isinstance(value, int) or isinstance(value, bool) or not lower <= value <= upper:
             raise ValueError("Use 1–3 articles, 1–30 days and 1–20 candidates per query.")
