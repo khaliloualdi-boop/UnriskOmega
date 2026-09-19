@@ -1,56 +1,46 @@
-"""Streamlit interface: analytics -> development -> news, in three sections.
-
-Section 1 (Current situation) is pure deterministic display -- no AI.
-Section 2 (Development) shows charts + an on-demand AI narration of the evolution.
-Section 3 (News & advice) turns curated news into trends / opportunities / precautions.
-
-The payload is computed once and cached; each AI call is lazy (only on click), so
-a model or news hiccup never blanks the page.
-"""
+"""One-click case analysis, live news and AI writing with persistent session results."""
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import streamlit as st
 
 import charts
-from ai_engine import (
-    BriefingGenerationError,
-    advise_from_news,
-    describe_development,
-)
-from analytics.payload import build_briefing
-from loader import load_store_from_files
+from presentation import narrative_markdown, news_status_message
 from processing.dossier import is_consolidated
+from workflow import case_files, load_case, run_workflow
 
 ROOT = Path(__file__).resolve().parent
 
-st.set_page_config(page_title="Advisor AI Assistant", layout="wide")
-st.title("Client Wealth Briefing Assistant")
-st.caption("Portfolio analytics, development and curated news, for advisor review.")
-
-
-@st.cache_resource
-def get_store():
-    return load_store_from_files(ROOT / "clients.json", ROOT / "reference.json")
-
-
-@st.cache_data
-def read_news(uploaded_bytes: bytes | None) -> dict | None:
-    if not uploaded_bytes:
-        return None
-    result = json.loads(uploaded_bytes.decode("utf-8"))
-    if not isinstance(result, dict):
-        raise TypeError("The news file must contain one JSON object.")
-    return result
-
-
-@st.cache_data(show_spinner="Calculating the portfolio profile…")
-def get_payload(portfolio_id: int, news_result: dict | None) -> dict:
-    # cached per (portfolio, news) so switching tabs doesn't rerun the Monte Carlo
-    return build_briefing(get_store(), portfolio_id, n_paths=2_000, news_result=news_result)
+st.set_page_config(page_title="Advisor AI Assistant", layout="wide", initial_sidebar_state="expanded")
+st.markdown("""
+<style>
+.block-container {max-width: 1440px; padding-top: 4.5rem;}
+html, body, [data-testid="stApp"], [data-testid="stMarkdownContainer"],
+input, textarea, button, h1, h2, h3, [data-testid="stMetric"] {
+font-family: Arial, Helvetica, sans-serif;}
+[data-testid="stMarkdownContainer"] p {line-height: 1.65;}
+[data-testid="stMarkdownContainer"] strong {font-weight: 700; color: #252b36;}
+h1 {font-size: 2rem !important; letter-spacing: -.04em;}
+h2 {font-size: 1.45rem !important; letter-spacing: -.025em;}
+h3 {font-size: 1.1rem !important;}
+[data-testid="stMetric"] {background: white; border: 1px solid #e3e6eb;
+border-radius: 12px; padding: 18px;}
+[data-testid="stMetricValue"] {font-size: 1.8rem;}
+[data-testid="stVerticalBlockBorderWrapper"] {border-radius: 14px;}
+[data-testid="stTabs"] button {font-weight: 600;}
+@media(max-width: 700px) {
+.block-container {padding: 4.5rem 1rem 1rem;}
+[data-testid="stHorizontalBlock"] {flex-wrap: wrap;}
+[data-testid="stColumn"] {min-width: 100% !important;}
+}
+@media print {[data-testid="stSidebar"],header,button {display:none !important;}}
+</style>
+""", unsafe_allow_html=True)
+st.image(str(ROOT / "assets" / "uro-light.svg"), width=230)
+st.title("Your portfolio, in perspective")
+st.caption("A clear view of today. Context for the conversation ahead.")
 
 
 def metric_value(payload: dict, block: str, metric: str):
@@ -70,119 +60,177 @@ def fmt_pct(x):
 
 
 # ----- inputs -----
-store = get_store()
+st.sidebar.header("Briefing input")
+case_path = st.sidebar.selectbox("Case file", case_files(ROOT), format_func=lambda p: p.name)
+st.sidebar.caption("Add client JSON files to inputs, then refresh this page.")
+if case_path is None:
+    st.info("No case file selected.")
+    st.stop()
+try:
+    store, fingerprint = load_case(case_path, ROOT / "reference.json")
+except (OSError, ValueError, TypeError) as exc:
+    st.error(f"Could not load the case: {exc}")
+    st.stop()
 clients = sorted(store.clients.values(), key=lambda item: item.client_ref or "")
 
-st.sidebar.header("Briefing input")
 client = st.sidebar.selectbox(
     "Client", clients, format_func=lambda item: f"{item.display_name} ({item.client_ref})")
+if client is None:
+    st.info("No usable client is available.")
+    st.stop()
 portfolios = [item for item in client.portfolios if item.portfolio_id is not None]
 portfolio = st.sidebar.selectbox(
     "Portfolio", portfolios,
     format_func=lambda item: (f"{item.portfolio_nr or item.portfolio_id} · "
                               f"{item.portfolio_currency or 'currency unknown'}"
                               + (" · consolidated" if is_consolidated(item) else "")))
-news_upload = st.sidebar.file_uploader(
-    "Curated news JSON (optional)", type=["json"],
-    help="JSON produced by the portfolio news module for this client and portfolio.")
+if portfolio is None:
+    st.info("This client has no portfolio with a usable PortfolioId.")
+    st.stop()
 
 if is_consolidated(portfolio):
     st.warning("This is a consolidated view. Do not add its values to its component portfolios.")
 
-try:
-    news_result = read_news(news_upload.getvalue() if news_upload else None)
-except (UnicodeDecodeError, json.JSONDecodeError, TypeError) as exc:
-    st.error(f"The news file could not be read: {exc}")
+selection = (str(case_path), fingerprint, client.client_ref, portfolio.portfolio_id)
+if st.session_state.get("selection") != selection:
+    st.session_state.pop("result", None)
+    st.session_state["selection"] = selection
+if st.button("Analyse and generate", type="primary"):
+    st.session_state.pop("result", None)
+    with st.status("Preparing your briefing…", expanded=True) as status:
+        try:
+            result = run_workflow(store, client.client_ref, portfolio.portfolio_id,
+                                  progress=status.write,
+                                  news_cache=st.session_state.setdefault("news_cache", {}),
+                                  cache_key=selection)
+        except (ValueError, OSError) as exc:
+            st.error(str(exc))
+            status.update(label="Unable to complete this case", state="error")
+        else:
+            st.session_state["result"] = result
+            limited = bool(result["errors"]) or result["payload"].get("market_context", {}).get(
+                "status") in {"partial", "unavailable"}
+            status.update(label="Ready with limitations" if limited else "Briefing ready",
+                          state="complete")
+result = st.session_state.get("result")
+if result is None:
+    st.info("Press Analyse and generate to calculate the profile, find news and write the briefing.")
     st.stop()
-
-if news_result:
-    if (news_result.get("client_ref") not in (None, client.client_ref)
-            or news_result.get("portfolio_id") not in (None, portfolio.portfolio_id)):
-        st.error("The uploaded news file belongs to a different client or portfolio.")
-        st.stop()
-
-payload = get_payload(portfolio.portfolio_id, news_result)
-if payload.get("status") == "unavailable":
-    st.error(payload.get("reason", "This portfolio could not be analyzed."))
-    st.stop()
+payload = result["payload"]
+for section, message in result["errors"].items():
+    st.warning(f"{section.capitalize()}: {message}")
 
 profile = payload["profile"]
-st.subheader(f"{client.display_name} · portfolio {profile['portfolio_number'] or profile['portfolio_id']}")
-st.caption(f"Analysis date: {payload.get('analysis_date') or 'unknown'} · "
-           f"News status: {payload['market_context'].get('status', 'attached')}")
+st.subheader(f"{client.display_name} · {profile['portfolio_number'] or profile['portfolio_id']}")
+st.caption(f"Portfolio as of {payload.get('analysis_date') or 'unknown'} · "
+           f"{profile.get('strategy', {}).get('name') or 'Strategy unavailable'}")
+c1, c2, c3, c4 = st.columns(4)
+aum = profile["aum"]
+c1.metric("Portfolio value", f"{aum:,.0f} {profile['reporting_currency'] or ''}"
+          if aum is not None else "Unavailable")
+c2.metric("Period value change", fmt_pct(metric_value(payload, "performance", "total_return")))
+c3.metric("Annualised volatility", fmt_pct(metric_value(payload, "performance", "annualized_volatility")))
+cash = payload.get("accounts_by_currency", {}).get("totals", {}).get("cash_share_ex_crypto")
+c4.metric("Cash allocation", fmt_pct(cash))
+series = payload.get("performance", {}).get("series", {})
+st.caption(f"History: {series.get('start_date') or 'unknown'} to {series.get('end_date') or 'unknown'}. "
+           "Value changes include deposits and withdrawals; they are not flow-adjusted returns.")
+gaps = payload.get("data_quality", {}).get("unavailable", [])
+if gaps:
+    st.warning(f"{len(gaps)} analysis areas have limited data. Review limitations before drawing conclusions.")
 
-tab_now, tab_dev, tab_news = st.tabs(["Current situation", "Development", "News & advice"])
-
-# ============================ Section 1: current situation (no AI) ============================
-with tab_now:
-    c1, c2, c3, c4 = st.columns(4)
-    aum = profile["aum"]
-    c1.metric("AUM", f"{aum:,.0f} {profile['reporting_currency'] or ''}" if aum is not None else "—")
-    c2.metric("Total return", fmt_pct(metric_value(payload, "performance", "total_return")))
-    c3.metric("Annualized volatility", fmt_pct(metric_value(payload, "performance", "annualized_volatility")))
-    c4.metric("Unavailable blocks", len(payload.get("data_quality", {}).get("unavailable", [])))
-
-    holds = payload.get("top_holdings", {})
-    if holds.get("status") == "calculated":
-        st.markdown("**Top holdings**")
-        st.dataframe([{
-            "Name": h["name"], "ISIN": h["isin"], "Type": h["instrument_type"],
-            "Value": h["value"], "Weight": fmt_pct(h["weight_of_total"]),
-            "Asset class": h["asset_class"], "Sector": h["sector"], "Region": h["region"],
-        } for h in holds["holdings"]], use_container_width=True, hide_index=True)
+with st.container(border=True):
+    st.caption("THE 60-SECOND BRIEFING")
+    if result["texts"].get("briefing"):
+        st.markdown(narrative_markdown(result["texts"]["briefing"]))
     else:
-        st.info(f"Holdings unavailable: {holds.get('reason', 'no data')}")
+        st.info("The narrative is unavailable. You can still explore the analysis below.")
 
-    col_a, col_b = st.columns(2)
-    accts = payload.get("accounts_by_currency", {})
-    if accts.get("status") == "calculated":
-        col_a.markdown("**Accounts (cash / crypto)**")
-        col_a.dataframe([{"Currency": e["currency"], "Category": e["category"],
-                          "Value": e["value"], "Weight": fmt_pct(e["weight_of_total"])}
-                         for e in accts["by_currency"]], use_container_width=True, hide_index=True)
-    drift = payload.get("mandate", {}).get("saa_drift", {})
-    if drift.get("status") == "calculated":
-        col_b.markdown("**Asset class vs SAA target**")
-        col_b.dataframe([{"Category": r["category"], "Actual": fmt_pct(r["actual"]),
-                          "Target": fmt_pct(r["target"]), "Status": r["status"]}
-                         for r in drift["dimensions"].get("asset_class", [])],
-                        use_container_width=True, hide_index=True)
-
-# ============================ Section 2: development (charts + AI) ============================
-with tab_dev:
-    dates, values = nav_series(portfolio)
-    ccy = profile["portfolio_currency"] or ""
-    left, right = st.columns(2)
-    left.plotly_chart(charts.nav_line(dates, values, currency=ccy), use_container_width=True)
-    trough = (payload.get("performance", {}).get("metrics", {})
-              .get("max_drawdown", {}).get("trough_date"))
-    right.plotly_chart(charts.drawdown_curve(dates, values, trough_date=trough), use_container_width=True)
-
-    lo, ro = st.columns(2)
+tab_now, tab_dev, tab_news = st.tabs(["Portfolio health", "Performance & outlook", "News & perspective"])
+with tab_now:
+    left, right = st.columns([1, 1.2], gap="large")
     alloc = payload.get("allocation", {})
     weights = (alloc.get("allocation", {}).get("asset_class", {}).get("weights", {})
                if alloc.get("status") == "calculated" else {})
-    lo.plotly_chart(charts.allocation_donut(weights), use_container_width=True)
-    fan = payload.get("projection", {}).get("bootstrap", {}).get("fan_chart", [])
-    ro.plotly_chart(charts.projection_fan(fan, currency=ccy), use_container_width=True)
+    with left, st.container(border=True):
+        st.subheader("Where your portfolio is invested")
+        st.plotly_chart(charts.allocation_donut(weights), use_container_width=True)
+    with right, st.container(border=True):
+        st.subheader("Largest holdings")
+        holds = payload.get("top_holdings", {})
+        if holds.get("status") == "calculated":
+            st.dataframe([{"Holding": h["name"], "Value": h["value"],
+                           "Weight": fmt_pct(h["weight_of_total"]),
+                           "Asset class": h["asset_class"]}
+                          for h in holds["holdings"]], use_container_width=True, hide_index=True)
+            st.caption("Weights use the holdings total defined by the analysis, not a guessed denominator.")
+        else:
+            st.info(holds.get("reason", "Holdings data unavailable."))
+    with st.expander("Investment limits and account detail"):
+        drift = payload.get("mandate", {}).get("saa_drift", {})
+        if drift.get("status") == "calculated":
+            st.dataframe([{"Category": r["category"], "Actual": fmt_pct(r["actual"]),
+                           "Target": fmt_pct(r["target"]), "Status": r["status"]}
+                          for r in drift["dimensions"].get("asset_class", [])],
+                         use_container_width=True, hide_index=True)
+        else:
+            st.info(drift.get("reason", "Allocation limits unavailable."))
+        accts = payload.get("accounts_by_currency", {})
+        if accts.get("status") == "calculated":
+            st.dataframe(accts["by_currency"], hide_index=True, use_container_width=True)
 
-    if st.button("Explain development with AI", type="primary"):
-        with st.spinner("Writing the development commentary…"):
-            try:
-                st.markdown(describe_development(payload))
-            except BriefingGenerationError as exc:
-                st.error(str(exc))
+with tab_dev:
+    dates, values = nav_series(portfolio)
+    ccy = profile["portfolio_currency"] or ""
+    with st.container(border=True):
+        graph, narrative = st.columns([1.65, 1], gap="large")
+        graph.plotly_chart(charts.nav_line(dates, values, currency=ccy), use_container_width=True)
+        with narrative:
+            st.subheader("The story behind the figures")
+            st.markdown(narrative_markdown(result["texts"].get("development")
+                                          or "Development commentary is unavailable."))
+    left, right = st.columns(2, gap="large")
+    with left, st.container(border=True):
+        st.plotly_chart(charts.drawdown_curve(dates, values), use_container_width=True)
+        st.caption("Declines from a previous portfolio-value peak. Cash flows may contribute to the movement.")
+    with right, st.container(border=True):
+        projection = payload.get("projection", {}).get("bootstrap", {})
+        st.plotly_chart(charts.projection_fan(projection.get("fan_chart", []), currency=ccy),
+                        use_container_width=True)
+        st.caption("Illustrative scenarios, not a forecast or a guaranteed range of outcomes.")
+        with st.expander("Scenario assumptions"):
+            st.write(projection.get("assumptions") or projection.get("reason") or "Unavailable.")
 
-# ============================ Section 3: news & advice (AI) ============================
 with tab_news:
     mc = payload.get("market_context", {})
-    if mc.get("status") == "to_be_provided_by_market_data_team":
-        st.info("No curated news attached. Upload the news module's JSON in the sidebar to enable advice.")
-    else:
-        st.caption("Trends, opportunities and precautions are derived only from the attached news.")
-        if st.button("Generate trends & advice", type="primary"):
-            with st.spinner("Reading the curated news…"):
-                try:
-                    st.markdown(advise_from_news(payload))
-                except BriefingGenerationError as exc:
-                    st.error(str(exc))
+    if mc.get("status") in {"partial", "unavailable"}:
+        st.warning(news_status_message(mc))
+    articles = mc.get("articles", [])
+    st.caption(f"News checked: {mc.get('news_as_of') or 'unavailable'}")
+    left, right = st.columns([1.35, 1], gap="large")
+    with left:
+        for article in articles:
+            with st.container(border=True):
+                st.caption(f"{article['source']} · {article['published_at']}")
+                st.subheader(article["title"])
+                st.write(article.get("snippet", ""))
+                matches = list(dict.fromkeys(m.get("term", "") for m in article.get("matches", [])))
+                if matches:
+                    st.caption("Related exposure: " + ", ".join(matches))
+                st.link_button("Read original source ↗", article["url"])
+        if not articles:
+            st.info(news_status_message(mc))
+    with right, st.container(border=True):
+        st.subheader("For your next conversation")
+        st.markdown(narrative_markdown(result["texts"].get("news")
+                                      or news_status_message(mc)))
+
+with st.expander("Sources and data limitations"):
+    for warning in payload.get("market_context", {}).get("warnings", []):
+        st.warning(warning)
+    for gap in gaps:
+        st.write(f"{gap.get('block', 'Analysis')}: {gap.get('reason', 'Unavailable')}")
+    for note in payload.get("data_quality", {}).get("notes", []):
+        st.caption(note)
+    st.json(payload, expanded=False)
+st.caption("UnRiskOmega · Advisor briefing · Illustrative; not investment advice.")

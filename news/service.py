@@ -1,7 +1,9 @@
 """Select source articles with explicit matches to named portfolio exposures."""
 import json
 import re
+import time
 from collections import Counter
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from datetime import UTC, datetime, timedelta
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
@@ -112,12 +114,57 @@ def _identities(article):
     }
 
 
+def _search_batches(queries, provider, limit, lookback_days, budget, workers, progress):
+    """Bound caller waiting, including providers that do not honour timeouts."""
+    deadline = time.monotonic() + budget
+    pool = ThreadPoolExecutor(max_workers=workers)
+
+    def search(query):
+        if time.monotonic() >= deadline:
+            raise NewsProviderError("News search time limit reached.")
+        # Apify supports a shared deadline; other provider contracts remain valid.
+        from .apify import ApifyNewsProvider
+        options = {"deadline": deadline} if isinstance(provider, ApifyNewsProvider) else {}
+        return provider.search(query.text, limit=limit, lookback_days=lookback_days, **options)
+
+    pending = {pool.submit(search, query): index for index, query in enumerate(queries)}
+    outcomes = {}
+    try:
+        while pending:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            done, _ = wait(pending, timeout=remaining, return_when=FIRST_COMPLETED)
+            if not done:
+                break
+            for future in done:
+                index = pending.pop(future)
+                try:
+                    outcomes[index] = future.result()
+                except NewsProviderError as exc:
+                    outcomes[index] = exc
+                progress(f"Searching news: {len(outcomes)} of {len(queries)} completed…")
+        for future, index in pending.items():
+            future.cancel()
+            outcomes[index] = NewsProviderError("News search time limit reached; coverage is incomplete.")
+        if pending:
+            progress("News time limit reached. Continuing with available results…")
+    finally:
+        # Waiting here would defeat the overall deadline. Live requests have
+        # their own short timeouts and remote actor runtime limits.
+        pool.shutdown(wait=False, cancel_futures=True)
+    return [outcomes[index] for index in range(len(queries))]
+
+
 def collect_news(
     dossier: ClientDossier, provider, *, as_of=None, lookback_days=7,
     max_articles=3, per_query_limit=10, aliases=None, max_queries=4,
+    time_budget=60, max_workers=1, progress=None,
 ) -> NewsResult:
     """Zero results are valid: no broad-market fallback or synthesized article."""
     now = _utc(as_of or datetime.now(UTC))
+    if not 0 < time_budget <= 120 or max_workers not in (1, 2):
+        raise ValueError("Use a positive news budget up to 120 seconds and one or two workers.")
     for value, lower, upper in ((max_articles, 1, 3), (lookback_days, 1, 30), (per_query_limit, 1, 20)):
         if not isinstance(value, int) or isinstance(value, bool) or not lower <= value <= upper:
             raise ValueError("Use 1–3 articles, 1–30 days and 1–20 candidates per query.")
@@ -135,12 +182,12 @@ def collect_news(
         result.warnings.append(f"analysis_date={dossier.analysis_date}; news_cutoff={now.date()}")
     rejects = Counter()
     candidates = []
-    for query in plan.queries:
-        try:
-            batch = provider.search(query.text, limit=per_query_limit, lookback_days=lookback_days)
-        except NewsProviderError as exc:
+    batches = _search_batches(plan.queries, provider, per_query_limit, lookback_days,
+                              time_budget, max_workers, progress or (lambda message: None))
+    for query, batch in zip(plan.queries, batches, strict=True):
+        if isinstance(batch, NewsProviderError):
             result.failed_queries += 1
-            result.warnings.append(f"query={query.text}: {exc}")
+            result.warnings.append(f"query={query.text}: {batch}")
             continue
         retrieved = _utc(batch.retrieved_at)
         for row in batch.items[:per_query_limit]:

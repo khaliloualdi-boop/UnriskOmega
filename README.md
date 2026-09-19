@@ -15,9 +15,8 @@ The engine currently provides:
 - seeded bootstrap and parametric projections; and
 - one strict JSON briefing payload with explicit unavailable states.
 
-The news module targets held instruments and can query Apify. Final AI narration
-remains external. The complete payload accepts the news module's JSON as its
-`market_context` block.
+The news module targets held instruments through Apify. The web app automatically
+attaches those results as `market_context` and requests narration from OpenAI.
 
 ## Run in VS Code
 
@@ -67,18 +66,34 @@ uv run python build_briefing.py CASE-002 --news outputs/news-CASE-002.json \
   --output outputs/briefing-CASE-002.json
 ```
 
-Run the advisor web app after setting an OpenAI API key in the same terminal:
+Run the advisor web app after setting both service keys in the same terminal:
 
 ```bash
 export OPENAI_API_KEY="your-key"
+export APIFY_TOKEN="your-apify-token"
 uv run streamlit run app.py
 ```
 
-The app lets the advisor choose a client and portfolio, optionally upload the
-matching JSON produced by the news module, inspect the complete factual payload,
-and generate a 130–160 word briefing. The news file is rejected if its client or
-portfolio identifier conflicts with the current selection. `OPENAI_MODEL` can
-override the default `gpt-5-mini` model.
+Place new client JSON files in `inputs/`, then open or refresh the app. It accepts
+a single client object, a client array, or a `Clients` wrapper with the existing
+export fields. If the folder has no JSON files, the app uses `clients.json`.
+Select the file, client and portfolio; with one case and portfolio the defaults
+are already selected. Press **Analyse and generate** once to calculate analytics,
+retrieve and curate news, and write the briefing, development and news commentary.
+No document upload or manual news JSON is needed.
+
+Results remain in the browser session while browsing sections. Changing the case,
+portfolio, or input file contents clears them; pressing the button again explicitly
+starts a fresh run and new billable service calls. Apify searches at most four
+queries with its existing per-query charge cap. OpenAI makes up to three calls;
+news commentary is skipped if no articles qualify. API failures leave the available
+analysis visible with a message. No live calls occur merely by opening the page.
+
+The root `reference.json` remains the shared reference dataset. Unrecognised
+securities and insufficient history keep their existing unavailable states.
+Peer comparisons use clients in the selected file, so a single new case may have
+no suitable peers. New case files in `inputs/` are ignored by Git.
+`OPENAI_MODEL` can override the default `gpt-5-mini` model.
 
 ## Programmatic entry points
 

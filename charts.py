@@ -15,9 +15,9 @@ import plotly.graph_objects as go
 # Compact, colour-blind-friendly categorical palette (swap for brand colours later).
 _CATEGORICAL = ["#4e79a7", "#59a14f", "#e15759", "#f28e2b", "#76b7b2",
                 "#edc948", "#b07aa1", "#9c755f", "#bab0ac", "#86bcb6"]
-_LINE = "#3b6ea5"
-_BAND = "rgba(59,110,165,0.18)"
-_BAND_INNER = "rgba(59,110,165,0.32)"
+_LINE = "#df640e"
+_BAND = "rgba(223,100,14,0.10)"
+_BAND_INNER = "rgba(223,100,14,0.24)"
 _NEG = "#e15759"
 
 
@@ -34,6 +34,10 @@ def _empty(message: str) -> go.Figure:
 def _base(fig: go.Figure, title: str, *, height: int = 360) -> go.Figure:
     fig.update_layout(title=title, height=height, template="plotly_white",
                       margin=dict(l=40, r=20, t=50, b=40), hovermode="x unified")
+    fig.update_layout(font={"family": "Arial, sans-serif", "color": "#394354", "size": 13},
+                      paper_bgcolor="white", plot_bgcolor="white")
+    fig.update_xaxes(showgrid=False)
+    fig.update_yaxes(gridcolor="#edf0f4", zerolinecolor="#edf0f4")
     return fig
 
 
@@ -65,7 +69,7 @@ def drawdown_curve(dates: Sequence[Any], values: Sequence[float], *,
     if trough_date is not None:
         fig.add_vline(x=trough_date, line=dict(color=_NEG, dash="dot"),
                       annotation_text="trough", annotation_position="top")
-    fig.update_yaxes(title="Drawdown (%)", rangemode="tozero", autorange="reversed")
+    fig.update_yaxes(title="Drawdown (%)", rangemode="tozero")
     return _base(fig, title)
 
 
@@ -78,7 +82,11 @@ def allocation_donut(weights: dict[str, float], *,
     labels = [k for k, _ in items]
     vals = [v * 100 for _, v in items]
     fig = go.Figure(go.Pie(labels=labels, values=vals, hole=0.55, sort=False,
-                           marker=dict(colors=_CATEGORICAL[:len(labels)]),
+                           marker=dict(colors=[{
+                               "Shares": "#df640e", "Bonds": "#385777",
+                               "Liquidity": "#30958c", "Real estate": "#a98ac3",
+                               "Specialties andCommodities": "#d6ac48",
+                           }.get(label, "#a6afb9") for label in labels]),
                            textinfo="label+percent"))
     return _base(fig, title, height=380)
 
